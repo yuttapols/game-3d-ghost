@@ -2,17 +2,21 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e0c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>หมู่บ้านโนนสวรรค์ — เกมเดินจับผิด</title>
 <style>
 :root{--ink:#f1ecd9;--dim:#a9a48f;--panel:rgba(14,18,16,.72);--line:rgba(241,236,217,.18);--red:#ff3b2a;--font:"Leelawadee UI","Noto Sans Thai","Sarabun",Tahoma,sans-serif}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#0b0e0c;color:var(--ink);font-family:var(--font);user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0e0c;color:var(--ink);font-family:var(--font);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#c{touch-action:none}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block}
-.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(180deg,rgba(6,8,7,.55),rgba(6,8,7,.86));z-index:10;padding:24px;text-align:center}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:safe center;flex-direction:column;overflow-y:auto;touch-action:pan-y;background:linear-gradient(180deg,rgba(6,8,7,.55),rgba(6,8,7,.86));z-index:10;padding:24px;text-align:center}
 h1{font-size:clamp(28px,5vw,54px);margin:0 0 4px;letter-spacing:.01em;font-weight:700;text-wrap:balance}
 .sub{color:var(--dim);margin:0 0 22px;font-size:15px}
-.rules{max-width:560px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 20px;font-size:15px;line-height:1.7;margin-bottom:20px}
+.rules{max-width:560px;max-height:calc(100vh - 230px);overflow-y:auto;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 20px;font-size:15px;line-height:1.7;margin-bottom:20px}
 .rules b.w{color:#fff}.rules b.r,.r{color:var(--red)}.w{color:#fff}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;font-size:13.5px;color:var(--dim);margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
 .keys kbd{color:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
@@ -20,15 +24,15 @@ button{font-family:var(--font);font-size:17px;font-weight:600;padding:12px 26px;
 button.ghost{background:transparent;color:var(--ink)}
 button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1ff;outline-offset:2px}
 #hud{display:none;position:fixed;inset:0;pointer-events:none;z-index:5;font-variant-numeric:tabular-nums}
-#tl{position:absolute;left:16px;top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13.5px;line-height:1.55;max-width:min(430px,60vw)}
+#tl{position:absolute;left:max(16px,calc(env(safe-area-inset-left) + 8px));top:max(14px,env(safe-area-inset-top));background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13.5px;line-height:1.55;max-width:min(430px,60vw)}
 #score{font-weight:700;font-size:15px;margin-top:3px}
-#tr{position:absolute;right:16px;top:14px;text-align:right}
+#tr{position:absolute;right:max(16px,calc(env(safe-area-inset-right) + 8px));top:max(14px,env(safe-area-inset-top));text-align:right}
 #time{font-size:20px;font-weight:700;text-shadow:0 1px 4px #000}
 #loc{font-size:13.5px;color:var(--ink);text-shadow:0 1px 4px #000;margin-bottom:8px}
 #map{width:180px;height:180px;border-radius:10px;border:1px solid var(--line);display:block;margin-left:auto}
 #map.big{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,80vmin);height:min(560px,80vmin)}
 #cross{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,255,255,.7);box-shadow:0 0 3px #000}
-#bl{position:absolute;left:16px;bottom:16px;font-size:12px;color:var(--dim)}
+#bl{position:absolute;left:max(16px,calc(env(safe-area-inset-left) + 8px));bottom:max(16px,env(safe-area-inset-bottom));font-size:12px;color:var(--dim)}
 #stam{width:170px;height:6px;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:4px}
 #stamfill{height:100%;width:100%;background:#e8e2c8}
 #bar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px}
@@ -49,6 +53,46 @@ button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1
 @keyframes shake{0%{translate:-10px 6px}50%{translate:9px -8px}100%{translate:-6px -4px}}
 @media (prefers-reduced-motion:reduce){#scareC{animation:none}}
 #fade{position:fixed;inset:0;background:#000;opacity:0;transition:opacity .4s;pointer-events:none;z-index:8}
+#touch{display:none;position:fixed;inset:0;z-index:6;touch-action:none}
+#tzone{position:absolute;inset:0;touch-action:none}
+#touch.edit #tzone{pointer-events:none;background:rgba(0,0,0,.35)}
+.tb{position:absolute;transform:translate(-50%,-50%);margin:0;padding:0;border-radius:50%;background:rgba(14,18,16,.55);border:2px solid rgba(241,236,217,.6);color:var(--ink);font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;touch-action:none;line-height:1.05;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.tb svg{width:44%;height:44%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tb.on,.tb.down{background:rgba(241,236,217,.9);color:#14160f}
+.tb[data-b=time]{display:none}body.free .tb[data-b=time],#touch.edit .tb[data-b=time]{display:flex}
+#joy{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(241,236,217,.5);background:rgba(14,18,16,.28);pointer-events:none}
+#joy.act{background:rgba(14,18,16,.42)}
+#knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(241,236,217,.7);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+#touch.edit .tb,#touch.edit #joy{outline:2px dashed #ffe066;outline-offset:4px;opacity:1!important;pointer-events:auto;cursor:move}
+#editbar{display:none;position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:12;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 14px;font-size:14px;white-space:nowrap}
+#editbar button{font-size:14px;padding:7px 14px;margin:0}
+body.touchmode #bar{display:none}
+body.touchmode #bl{left:50%;transform:translateX(-50%);bottom:max(6px,env(safe-area-inset-bottom));text-align:center}
+body.touchmode #stam{width:140px}
+body.touchmode .kb,body:not(.touchmode) .tc,body:not(.touchmode) .tonly{display:none!important}
+#rotate{display:none;z-index:60;background:#0b0e0c}
+#rotate svg{width:84px;height:84px;margin-bottom:14px;animation:rot 2.2s ease-in-out infinite}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 20px 16px;width:min(560px,100%);text-align:left}
+.panel h2{margin:0 0 6px;font-size:22px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;font-size:14.5px}
+.row label{color:var(--ink)}.row label span{color:var(--dim);margin-left:6px;font-variant-numeric:tabular-nums}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{font-size:13px;padding:6px 11px;margin:0;background:transparent;color:var(--ink)}
+.seg button.on{background:#f1ecd9;color:#14160f;border-color:#f1ecd9}
+input[type=range]{width:min(220px,48vw);accent-color:#f1ecd9;height:28px}
+.panel .acts{display:flex;justify-content:flex-end;gap:6px;margin-top:12px;flex-wrap:wrap}
+@media (max-height:520px) and (min-width:640px){.panel{width:min(860px,100%)}.rows{display:grid;grid-template-columns:1fr 1fr;column-gap:22px}.row input[type=range]{width:min(170px,22vw)}}
+@media (max-height:520px),(max-width:760px){
+ #tl{font-size:11.5px;padding:6px 9px;max-width:44vw;line-height:1.4}#score{font-size:12.5px}
+ #map{width:108px;height:108px}#time{font-size:15px}#loc{font-size:11px;margin-bottom:4px}
+ #flash{font-size:14px;top:16%;white-space:normal;max-width:80vw;text-align:center}
+ .overlay{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left))}
+ h1{font-size:26px}.sub{margin-bottom:10px;font-size:13px}
+ .rules{font-size:12.5px;line-height:1.5;padding:10px 14px;margin-bottom:10px;max-height:46vh;overflow-y:auto}
+ button{font-size:15px;padding:9px 18px;margin:3px}#msgS{font-size:13.5px}#msgT{font-size:26px}
+ .row{padding:5px 0;font-size:13px}.panel{padding:10px 14px 12px}.panel h2{font-size:18px}
+}
 #tip{display:none;position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:12.5px;color:var(--dim);background:var(--panel);padding:5px 10px;border-radius:6px}
 </style>
 </head>
@@ -66,6 +110,29 @@ button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1
   <div id="bl">แรงวิ่ง<div id="stam"><div id="stamfill"></div></div></div>
   <div id="bar"><div class="slot" id="slot1"><kbd>1</kbd>มือเปล่า</div><div class="slot" id="slot2"><kbd>2</kbd>ไฟฉาย</div></div>
 </div>
+<div id="touch"><div id="tzone"></div><div id="joy"><div id="knob"></div></div>
+  <button class="tb" data-b="run" aria-label="วิ่ง"><svg viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg>วิ่ง</button>
+  <button class="tb" data-b="jump" aria-label="กระโดด"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>กระโดด</button>
+  <button class="tb" data-b="light" aria-label="ไฟฉาย"><svg viewBox="0 0 24 24"><path d="M9 3h6v5l-2 3v9h-2v-9L9 8z"/><path d="M4 4l2 2M20 4l-2 2"/></svg>ไฟฉาย</button>
+  <button class="tb" data-b="time" aria-label="กลางวัน-กลางคืน"><svg viewBox="0 0 24 24"><circle cx="9" cy="10" r="4"/><path d="M15 15a5 5 0 1 0 5-6 4 4 0 0 1-5 6z"/></svg>☀/☾</button>
+  <button class="tb" data-b="pause" aria-label="หยุดเกม"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button>
+</div>
+<div id="editbar"><span>ลากปุ่มไปวางตรงที่ถนัด</span><button id="editReset" class="ghost">คืนค่าเดิม</button><button id="editDone">เสร็จ</button></div>
+<div class="overlay" id="rotate"><svg viewBox="0 0 64 64" fill="none" stroke="#f1ecd9" stroke-width="3"><rect x="20" y="6" width="24" height="52" rx="4"/><circle cx="32" cy="51" r="2"/></svg><div style="font-size:20px;font-weight:700">หมุนเครื่องเป็นแนวนอน</div><p class="sub" style="margin-top:6px">เกมนี้เล่นในแนวนอนเท่านั้น</p></div>
+<div class="overlay" id="settings" style="display:none"><div class="panel">
+  <h2>ตั้งค่า</h2>
+  <div class="rows">
+  <div class="row"><label>ปุ่มบนจอ</label><div class="seg" data-k="touch"><button data-v="auto">อัตโนมัติ</button><button data-v="on">เปิด</button><button data-v="off">ปิด</button></div></div>
+  <div class="row"><label>คุณภาพกราฟิก</label><div class="seg" data-k="quality"><button data-v="auto">อัตโนมัติ</button><button data-v="low">ต่ำ</button><button data-v="medium">กลาง</button><button data-v="high">สูง</button></div></div>
+  <div class="row"><label>ความไวการหันมอง<span id="vsens"></span></label><input type="range" id="sSens" min="0.4" max="2.5" step="0.1"></div>
+  <div class="row tonly"><label>ขนาดปุ่ม<span id="vsize"></span></label><input type="range" id="sSize" min="0.7" max="1.5" step="0.05"></div>
+  <div class="row tonly"><label>ความทึบปุ่ม<span id="vop"></span></label><input type="range" id="sOp" min="0.25" max="1" step="0.05"></div>
+  <div class="row tonly"><label>ปุ่มวิ่ง</label><div class="seg" data-k="runMode"><button data-v="hold">กดค้าง</button><button data-v="toggle">แตะเปิด/ปิด</button></div></div>
+  <div class="row tonly"><label>ดันจอยสุดเพื่อวิ่ง</label><div class="seg" data-k="pushRun"><button data-v="true">เปิด</button><button data-v="false">ปิด</button></div></div>
+  <div class="row tonly"><label>ฝั่งจอยเดิน</label><div class="seg" data-k="swap"><button data-v="false">ซ้าย</button><button data-v="true">ขวา (ถนัดซ้าย)</button></div></div>
+  </div>
+  <div class="acts"><button id="btnFull" class="ghost tonly">เต็มจอ</button><button id="btnEdit" class="ghost tonly">จัดตำแหน่งปุ่ม</button><button id="setClose">เสร็จ</button></div>
+</div></div>
 <div class="overlay" id="menu">
   <h1>หมู่บ้านโนนสวรรค์</h1>
   <p class="sub">เกมเดินจับผิด · 5 เส้นทาง · ห้ามพลาด</p>
@@ -74,8 +141,14 @@ button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1
     เจอสิ่งผิดปกติระหว่างทาง → ออก<b class="r">ประตูแดง</b><br>
     ไม่เจออะไรผิดปกติ → ออก<b class="w">ประตูขาว</b><br>
     สิ่งผิดปกติอาจมีมากกว่า 1 อย่างในเส้นทางเดียว · ตอบถูกนับ 1 · ตอบผิดหรือโดนผีจับเริ่มใหม่จาก 0 · ครบ 5 เส้นทาง (สุ่ม ไม่ซ้ำ) คือชนะ<br>
-    ชาวบ้านที่ยิ้มแย้มทักทายคือเรื่องปกติ ผีและสิ่งแปลกประหลาดคือผิดปกติ<br>สังเกตให้ทั่ว: หน้าต่างบ้าน พื้นถนน หน้าพระริมทาง และหันกลับไปมองข้างหลังด้วย<br>ผีบางตัวแอบอยู่หลังบ้านหรือหลังต้นไม้ ถ้ามันเห็นว่าเราเห็น มันจะไล่ — <b class="r">วิ่งไปประตูแดงให้ทัน</b><br>ลูกศรเหลืองบอกทาง แต่จะเดินสำรวจซอยอื่นในหมู่บ้านก็ได้ ยิ่งรอบหลังยิ่งมืด
-    <div class="keys">
+    ชาวบ้าน พระ ฤาษี ครูกับนักเรียนที่ยิ้มแย้มทักทายคือเรื่องปกติ ผีและสิ่งแปลกประหลาดคือผิดปกติ<br>สังเกตให้ทั่ว: หน้าต่างบ้าน พื้นถนน หน้าพระริมทาง และหันกลับไปมองข้างหลังด้วย<br>ผีบางตัวแอบอยู่หลังบ้านหรือหลังต้นไม้ ถ้ามันเห็นว่าเราเห็น มันจะไล่ — <b class="r">วิ่งไปประตูแดงให้ทัน</b><br>ลูกศรเหลืองบอกทาง แต่จะเดินสำรวจซอยอื่นในหมู่บ้านก็ได้ ยิ่งรอบหลังยิ่งมืด
+    <div class="keys tc">
+      <kbd>จอยซ้าย</kbd><span>แตะค้างแล้วลากที่ครึ่งซ้ายของจอเพื่อเดิน (ดันสุดคือวิ่ง)</span>
+      <kbd>ลากขวา</kbd><span>ลากนิ้วที่ครึ่งขวาของจอเพื่อหันมอง</span>
+      <kbd>ปุ่ม</kbd><span>วิ่ง · กระโดด · ไฟฉาย · แตะแผนที่มุมขวาเพื่อขยาย</span>
+      <kbd>ตั้งค่า</kbd><span>ย้ายตำแหน่ง ปรับขนาด และความทึบของปุ่มได้</span>
+    </div>
+    <div class="keys kb">
       <kbd>W A S D</kbd><span>เดิน</span>
       <kbd>Shift</kbd><span>วิ่ง (มีแรงจำกัด)</span>
       <kbd>เมาส์</kbd><span>หันมอง</span>
@@ -84,9 +157,9 @@ button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1
       <kbd>Space</kbd><span>กระโดด · <kbd>M</kbd> แผนที่ใหญ่ · <kbd>Esc</kbd> หยุดเกม</span>
     </div>
   </div>
-  <div><button id="btnHunt">เริ่มเกมจับผิด</button><button id="btnFree" class="ghost">เดินสำรวจอิสระ</button></div>
+  <div><button id="btnHunt">เริ่มเกมจับผิด</button><button id="btnFree" class="ghost">เดินสำรวจอิสระ</button><button id="btnSet" class="ghost">ตั้งค่า</button></div>
 </div>
-<div class="overlay" id="pause" style="display:none"><h1 style="font-size:34px">หยุดชั่วคราว</h1><p class="sub">คลิกเพื่อเล่นต่อ</p><div><button id="resume">เล่นต่อ</button><button id="toMenu" class="ghost">กลับเมนู</button></div></div>
+<div class="overlay" id="pause" style="display:none"><h1 style="font-size:34px">หยุดชั่วคราว</h1><p class="sub">พักเกมอยู่</p><div><button id="resume">เล่นต่อ</button><button id="pSet" class="ghost">ตั้งค่า</button><button id="toMenu" class="ghost">กลับเมนู</button></div></div>
 <div class="overlay" id="msg" style="display:none"><div id="msgT"></div><div id="msgS"></div><button id="msgB"></button></div>
 <script>console.warn('Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation'),
 /**
@@ -792,7 +865,7 @@ function updateChickens(dt, t) {
 function person(o = {}) {
   const g = new T.Group(), em = o.emissive || 0x000000, ei = o.ei || 0;
   const mk = c => new T.MeshLambertMaterial({ color: c, emissive: em, emissiveIntensity: ei });
-  const skin = mk(o.skin || 0xc99872), shirt = mk(o.shirt || 0x5577aa), pants = o.shorts ? mk(o.skin || 0xc99872) : mk(o.pants || 0x333844), hair = mk(o.hair || 0x111111);
+  const skin = mk(o.skin || 0xc99872), shirt = mk(o.shirt || 0x5577aa), pants = (o.shorts || o.bareLegs) ? mk(o.skin || 0xc99872) : mk(o.pants || 0x333844), hair = mk(o.hair || 0x111111); if (o.robeTex) shirt.map = o.robeTex;
   const torso = new T.Mesh(GEO.box, shirt); torso.scale.set(0.42, 0.6, 0.24); torso.position.y = 1.15; g.add(torso);
   const limb = (m, len, r) => { const p = new T.Group(); const c = new T.Mesh(GEO.cyl, m); c.scale.set(r, len, r); c.position.y = -len / 2; p.add(c); return p; };
   const legL = limb(pants, 0.86, 0.085), legR = limb(pants, 0.86, 0.085); legL.position.set(-0.11, 0.86, 0); legR.position.set(0.11, 0.86, 0); g.add(legL, legR);
@@ -804,7 +877,7 @@ function person(o = {}) {
   } else { const n = new T.Mesh(GEO.cyl, new T.MeshLambertMaterial({ color: 0x7a0c0c, emissive: 0x400000 })); n.scale.set(0.07, 0.1, 0.07); n.position.y = 0.0; head.add(n); }
   if (o.shorts) { const sh = new T.Mesh(GEO.box, mk(o.shorts)); sh.scale.set(0.44, 0.42, 0.26); sh.position.y = 0.72; g.add(sh); }
   if (o.panel) { const pn = new T.Mesh(GEO.box, mk(o.panel)); pn.scale.set(0.2, 0.5, 0.25); pn.position.set(-0.1, 1.17, 0); g.add(pn); const p2 = new T.Mesh(GEO.box, mk(o.panel)); p2.scale.set(0.2, 0.2, 0.252); p2.position.set(0.1, 1.33, 0); g.add(p2); }
-  if (o.skirt) { const s = new T.Mesh(GEO.cyl, mk(o.skirt)); s.scale.set(0.24, 0.9, 0.2); s.position.y = 0.5; g.add(s); legL.visible = legR.visible = false; }
+  if (o.skirt) { const sl = o.skirtLen || 0.9, sm = mk(o.skirt); if (o.robeTex) sm.map = o.robeTex; const s = new T.Mesh(GEO.cyl, sm); s.scale.set(0.24, sl, 0.2); s.position.y = 0.95 - sl / 2; g.add(s); if (sl > 0.8) legL.visible = legR.visible = false; }
   g.traverse(m => { if (m.isMesh) m.castShadow = true; }); g.userData = { legL, legR, armL, armR, head, torso }; return g;
 }
 const facePlayer = (g, p) => { g.rotation.y = Math.atan2(p.x - g.position.x, p.z - g.position.z); };
@@ -907,44 +980,90 @@ function bubble() {
   return sp;
 }
 const VE = { emissive: 0x3a2e24, ei: 0.45 };
+const tigerTex = canvasTex(128, 128, (g) => { g.fillStyle = '#c98a3a'; g.fillRect(0, 0, 128, 128); g.strokeStyle = '#2a1a0e'; g.lineWidth = 6; g.lineCap = 'round'; for (let i = 0; i < 9; i++) { const y = 8 + i * 14; g.beginPath(); g.moveTo(Math.random() * 30, y); g.quadraticCurveTo(64, y + (Math.random() * 16 - 8), 98 + Math.random() * 30, y + 4); g.stroke(); } }, true);
+const SAFFRON = 0xd9822b, STU_B = { shirt: 0xf6f6f2, shorts: 0x1c2a4a, skin: 0xc29270, hair: 0x15110e, bag: true }, STU_G = { shirt: 0xf6f6f2, skirt: 0x1c2a4a, skirtLen: 0.42, bareLegs: true, skin: 0xd2a27e, hair: 0x15110e, longHair: true, hairLen: 0.32, bag: true };
 const VDEF = [
   { id: 'boy', beh: 'boy', sc: [0.7, 0.7], opt: { shirt: 0xb5281c, panel: 0xf0b030, shorts: 0x121216, skin: 0xb98a66, hair: 0x15110e, sleeve: false }, lines: ['พี่ๆ ดูท่านี้สิครับ!', 'สวัสดีคร้าบ!', 'เล่นบอลกันไหมครับ', 'วันนี้ผมยิงได้ 7 ลูกเลยนะ'] },
-  { id: 'dad', beh: 'walk', sc: [1.3, 1.04], opt: { shirt: 0xf2ecc8, pants: 0x2a4a8a, skin: 0xc99872, hair: 0x15110e, watch: true }, lines: ['สวัสดีครับ มาเที่ยวเหรอครับ', 'พาครอบครัวมาเดินเล่นครับ', 'เดินระวังนะครับ'] },
-  { id: 'mom', beh: 'mom', sc: [1.12, 0.94], opt: { shirt: 0xf3dcc6, skirt: 0xf3dcc6, skin: 0xd2a27e, hair: 0x2a1c14, longHair: true, hairLen: 0.36, sleeve: false }, lines: ['สวัสดีค่ะ', 'น้องเพิ่งหลับ เบาๆ นะคะ', 'กินข้าวหรือยังคะ'] },
+  { id: 'dad', beh: 'walk', sc: [1.3, 1.04], bbY: 2.55, opt: { shirt: 0xf2ecc8, pants: 0x2a4a8a, skin: 0xc99872, hair: 0x15110e, watch: true }, lines: ['สวัสดีครับ มาเที่ยวเหรอครับ', 'พาครอบครัวมาเดินเล่นครับ', 'เดินระวังนะครับ'] },
+  { id: 'mom', beh: 'mom', follow: 'dad', lag: 0, latS: 0.85, sc: [1.12, 0.94], opt: { shirt: 0xf3dcc6, skirt: 0xf3dcc6, skin: 0xd2a27e, hair: 0x2a1c14, longHair: true, hairLen: 0.36, sleeve: false }, lines: ['สวัสดีค่ะ', 'น้องเพิ่งหลับ เบาๆ นะคะ', 'กินข้าวหรือยังคะ'] },
   { id: 'pa', beh: 'sweep', sc: [1.05, 0.95], opt: { shirt: 0x8a4a9a, skirt: 0x7a3a2a, skin: 0xb98a66, hair: 0x555555, longHair: true, hairLen: 0.2 }, lines: ['กินข้าวหรือยังลูก', 'แวะกินน้ำก่อนไหมจ๊ะ', 'ไปไหนมาล่ะลูก'] },
   { id: 'lung', beh: 'exercise', sc: [1.05, 1], opt: { shirt: 0xf4f4f0, shorts: 0x3a5a8a, skin: 0xa87a56, hair: 0x888888, sleeve: false }, lines: ['ยืดเส้นยืดสายหน่อย ฮึบ!', 'อากาศดีเนาะ', 'มาออกกำลังด้วยกันไหม'] },
   { id: 'yai', beh: 'wai', sc: [0.95, 0.86], opt: { shirt: 0xe8e0d0, skirt: 0x4a3a6a, skin: 0xb98a66, hair: 0xdddddd, longHair: true, hairLen: 0.16 }, lines: ['สวัสดีจ้ะหลาน', 'เดินดีๆ นะลูก', 'ขอให้โชคดีเด้อ'] },
   { id: 'num', beh: 'walk', sc: [1, 1], opt: { shirt: 0x3a8a6a, pants: 0x3a3a40, skin: 0xb98a66, hair: 0x111111 }, lines: ['หวัดดีครับ', 'ไปทางนั้นแหละครับ ตามลูกศรเลย', 'ยินดีต้อนรับสู่บ้านเราครับ'] },
+  // พระบิณฑบาต + เณร
+  { id: 'monk1', beh: 'monk', slow: 0.7, sc: [1, 1.02], opt: { shirt: SAFFRON, skirt: SAFFRON, skin: 0xb98a66, hair: 0xb98a66, sleeve: false, robe: true, bowl: true }, lines: ['เจริญพร', 'ขอให้โยมเดินทางปลอดภัย', 'บิณฑบาตเสร็จแล้ว จะกลับวัด'] },
+  { id: 'monk2', beh: 'monk', follow: 'monk1', lag: 2.1, latS: 0, sc: [1.03, 1.05], opt: { shirt: SAFFRON, skirt: SAFFRON, skin: 0xa87a56, hair: 0xa87a56, sleeve: false, robe: true, bowl: true }, lines: ['เจริญพร โยม', 'ขอให้มีความสุขนะโยม'] },
+  { id: 'nen', beh: 'monk', follow: 'monk1', lag: 4.0, latS: 0, sc: [0.74, 0.74], opt: { shirt: SAFFRON, skirt: SAFFRON, skin: 0xc29270, hair: 0xc29270, sleeve: false, robe: true }, lines: ['สวัสดีครับโยม', 'หลวงพี่เดินเร็วจังครับ'] },
+  // ฤาษี
+  { id: 'rusi', beh: 'meditate', sc: [1, 1], bbY: 1.95, off: 3.0, opt: { shirt: 0xc98a3a, skirt: 0xc98a3a, robeTex: tigerTex, skin: 0xa87a56, hair: 0xeeeeee, longHair: true, hairLen: 0.5, sleeve: false, beard: true, rusiHat: true, staff: true }, lines: ['สาธุ ขอให้ปลอดภัยเถิดลูก', 'ตาเฝ้าหมู่บ้านนี้มานานแล้ว', 'ใจนิ่งไว้ อย่ากลัว'] },
+  // ครูพานักเรียน
+  { id: 'kru', beh: 'walk', slow: 0.75, sc: [1.05, 1], opt: { shirt: 0xb8a47a, pants: 0x2e3038, skin: 0xc29270, hair: 0x15110e, book: true }, lines: ['สวัสดีครับ', 'พาเด็กๆ ไปทัศนศึกษาครับ', 'เด็กๆ ทักทายพี่เขาหน่อย'] },
+  { id: 'stu1', beh: 'student', follow: 'kru', lag: 1.8, latS: -0.55, sc: [0.8, 0.8], opt: STU_B, lines: ['สวัสดีครับ!', 'พี่ครับ ผีมีจริงไหมครับ'] },
+  { id: 'stu2', beh: 'student', follow: 'kru', lag: 1.8, latS: 0.55, sc: [0.78, 0.78], opt: STU_G, lines: ['สวัสดีค่ะ', 'วันนี้ไปดูวัดค่ะ'] },
+  { id: 'stu3', beh: 'student', follow: 'kru', lag: 3.2, latS: -0.55, sc: [0.76, 0.76], opt: Object.assign({}, STU_G, { hairLen: 0.18, skin: 0xc29270 }), lines: ['สวัสดีค่ะพี่', 'ครูคะ หนูเมื่อยขาแล้ว'] },
+  { id: 'stu4', beh: 'student', follow: 'kru', lag: 3.2, latS: 0.55, sc: [0.82, 0.82], opt: Object.assign({}, STU_B, { skin: 0xb98a66 }), lines: ['หวัดดีครับ', 'เดี๋ยวผมจะไปเตะบอล'] },
+  { id: 'kru2', beh: 'walk', follow: 'kru', lag: 4.8, latS: 0, sc: [1, 0.96], opt: { shirt: 0xf0e4ee, skirt: 0x2a2c4a, skin: 0xd2a27e, hair: 0x15110e, longHair: true, hairLen: 0.22, sleeve: false, book: true }, lines: ['สวัสดีค่ะ', 'เด็กๆ เดินชิดซ้ายนะคะ'] },
+  // ชาวนา แม่ค้า
+  { id: 'farmer', beh: 'walk', slow: 0.85, sc: [1.05, 1], opt: { shirt: 0x2a2f45, pants: 0x2a2f45, skin: 0xa0704e, hair: 0x15110e, ngob: true, hoe: true, sash: 0xc04a4a }, lines: ['ไปนามาครับ', 'ปีนี้ข้าวงามดีเด้อ', 'สวัสดีครับ'] },
+  { id: 'aunt', beh: 'walk', sc: [1, 0.96], opt: { shirt: 0xe86a8a, skirt: 0x4a3a6a, skin: 0xc29270, hair: 0x15110e, longHair: true, hairLen: 0.3, sleeve: false, basket: true }, lines: ['ไปตลาดมาจ้ะ', 'มะม่วงหวานนะ ซื้อไหม', 'สวัสดีจ้า'] },
 ];
+const lm = (c, e = 0x1a1612) => new T.MeshLambertMaterial({ color: c, emissive: e });
+function mesh(par, geo, mt, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) { const k = new T.Mesh(geo, mt); k.position.set(x, y, z); k.scale.set(sx, sy, sz); k.rotation.set(rx, ry, rz); k.castShadow = true; par.add(k); return k; }
 const villagers = VDEF.map(def => {
-  const g = new T.Group(), body = person(Object.assign({}, VE, def.opt)); body.scale.set(def.sc[0], def.sc[1], def.sc[0]); g.add(body); const u = body.userData;
-  if (def.opt.watch) { const w = new T.Mesh(GEO.box, new T.MeshLambertMaterial({ color: 0x111111 })); w.scale.set(0.14, 0.05, 0.14); w.position.y = -0.52; u.armL.add(w); }
-  if (def.id === 'mom') { const b = new T.Group(), sk = new T.MeshLambertMaterial({ color: 0xe0b89a, emissive: 0x3a2e24, emissiveIntensity: 0.45 }); const bd = new T.Mesh(GEO.sph, new T.MeshLambertMaterial({ color: 0x8aa8b0, emissive: 0x1a2428 })); bd.scale.set(0.11, 0.1, 0.2); bd.rotation.y = Math.PI / 2; b.add(bd); const hd = new T.Mesh(GEO.sph, sk); hd.scale.setScalar(0.085); hd.position.set(0.2, 0.04, 0); b.add(hd); const hr = new T.Mesh(GEO.sph, new T.MeshLambertMaterial({ color: 0x15110e })); hr.scale.set(0.07, 0.05, 0.08); hr.position.set(0.22, 0.09, 0); b.add(hr); b.position.set(0, 1.2, 0.24); body.add(b); u.baby = b; }
-  if (def.beh === 'sweep') { const br = new T.Group(); const st = new T.Mesh(GEO.cyl, new T.MeshLambertMaterial({ color: 0x8a6a48 })); st.scale.set(0.018, 1.3, 0.018); st.position.y = -0.3; br.add(st); const hd = new T.Mesh(GEO.cone, new T.MeshLambertMaterial({ color: 0xb89a5a })); hd.scale.set(0.16, 0.4, 0.06); hd.position.y = -1.1; br.add(hd); br.position.y = -0.6; br.rotation.x = 0.9; u.armR.add(br); }
-  const bb = bubble(); bb.position.y = 1.75 * def.sc[1] + (def.id === 'dad' ? 1.35 : 0.75); g.add(bb); g.visible = false; scene.add(g);
-  return { def, g, body, u, bb, R: null, t0: 0.5, tt: 0.5, dir: 1, side: 1, ph: Math.random() * 10, near: false, li: 0, bx: 0, bz: 0 };
+  const g = new T.Group(), body = person(Object.assign({}, VE, def.opt)); body.scale.set(def.sc[0], def.sc[1], def.sc[0]); g.add(body); const u = body.userData, o = def.opt;
+  if (o.watch) mesh(u.armL, GEO.box, lm(0x111111), 0, -0.52, 0, 0.14, 0.05, 0.14);
+  if (def.id === 'mom') { const b = new T.Group(), sk = new T.MeshLambertMaterial({ color: 0xe0b89a, emissive: 0x3a2e24, emissiveIntensity: 0.45 }); const bd = new T.Mesh(GEO.sph, lm(0x8aa8b0, 0x1a2428)); bd.scale.set(0.11, 0.1, 0.2); bd.rotation.y = Math.PI / 2; b.add(bd); const hd = new T.Mesh(GEO.sph, sk); hd.scale.setScalar(0.085); hd.position.set(0.2, 0.04, 0); b.add(hd); const hr = new T.Mesh(GEO.sph, lm(0x15110e)); hr.scale.set(0.07, 0.05, 0.08); hr.position.set(0.22, 0.09, 0); b.add(hr); b.position.set(0, 1.2, 0.24); body.add(b); u.baby = b; }
+  if (def.beh === 'sweep') { const br = new T.Group(); mesh(br, GEO.cyl, lm(0x8a6a48), 0, -0.3, 0, 0.018, 1.3, 0.018); mesh(br, GEO.cone, lm(0xb89a5a), 0, -1.1, 0, 0.16, 0.4, 0.06); br.position.y = -0.6; br.rotation.x = 0.9; u.armR.add(br); }
+  if (o.robe) mesh(body, GEO.box, lm(0xc0701e, 0x2a1406), 0.03, 1.16, 0, 0.13, 0.78, 0.262, 0, 0, 0.62);
+  if (o.bowl) { const bw = new T.Group(); mesh(bw, GEO.sph, lm(0x15151a), 0, 0, 0, 0.17, 0.13, 0.17); mesh(bw, GEO.cyl, lm(0x2a2a30), 0, 0.1, 0, 0.12, 0.03, 0.12); mesh(bw, GEO.box, lm(0xc0701e), 0, -0.12, 0.02, 0.3, 0.2, 0.05); bw.position.set(0, 1.0, 0.3); body.add(bw); }
+  if (o.beard) mesh(u.head, GEO.box, lm(0xf2f2ee, 0x3a3a38), 0, -0.04, 0.115, 0.16, 0.28, 0.06);
+  if (o.rusiHat) { const hm = new T.MeshLambertMaterial({ color: 0xc98a3a, map: tigerTex, emissive: 0x1a1006 }); mesh(u.head, GEO.cyl, hm, 0, 0.3, 0, 0.14, 0.12, 0.14); mesh(u.head, GEO.cone, hm, 0, 0.62, 0, 0.13, 0.52, 0.13); }
+  if (o.staff) { const st = new T.Group(); mesh(st, GEO.cyl, lm(0x6a4a2a), 0, 0.95, 0, 0.028, 1.9, 0.028); mesh(st, GEO.sph, lm(0x6a4a2a), 0, 1.92, 0, 0.06, 0.06, 0.06); st.position.set(0.62, 0, 0.12); st.rotation.z = 0.12; g.add(st); }
+  if (o.book) mesh(u.armL, GEO.box, lm(pick([0x2d5fa8, 0xc8102e, 0x2f7f4f])), 0, -0.55, 0.07, 0.04, 0.26, 0.2);
+  if (o.bag) mesh(body, GEO.box, lm(pick([0x1c3a8a, 0xc8102e, 0x2f7f4f, 0xe0a020])), 0, 1.15, -0.2, 0.32, 0.38, 0.15);
+  if (o.ngob) mesh(u.head, GEO.cone, lm(0xc8a860, 0x2a2010), 0, 0.36, 0, 0.4, 0.17, 0.4);
+  if (o.sash) mesh(body, GEO.box, lm(o.sash), 0, 0.92, 0, 0.45, 0.1, 0.262);
+  if (o.hoe) { const h = new T.Group(); mesh(h, GEO.cyl, lm(0x7a5a38), 0, 0, 0, 0.025, 1.5, 0.025); mesh(h, GEO.box, lm(0x555a60), 0, 0.72, 0.1, 0.18, 0.06, 0.22); h.position.set(0, -0.55, 0.05); u.armR.add(h); }
+  if (o.basket) { const bk = new T.Group(); mesh(bk, GEO.cyl, lm(0xb08a50), 0, 0, 0, 0.17, 0.16, 0.17); for (let i = 0; i < 4; i++) mesh(bk, GEO.sph, lm(pick([0xf2c230, 0x5fae44, 0xe33d3d])), Math.cos(i * 1.6) * 0.08, 0.1, Math.sin(i * 1.6) * 0.08, 0.07, 0.07, 0.07); bk.position.set(0, -0.62, 0.05); u.armL.add(bk); }
+  const bb = bubble(); bb.position.y = def.bbY || (1.75 * def.sc[1] + 0.75); g.add(bb); g.visible = false; scene.add(g);
+  return { def, g, body, u, bb, R: null, t0: 0.5, tt: 0.5, dir: 1, side: 1, ph: Math.random() * 10, near: false, gNear: false, li: 0, bx: 0, bz: 0, base: 0 };
 });
+const VBY = {}; villagers.forEach(v => VBY[v.def.id] = v);
 function resetPose(u, body) { for (const k of ['legL', 'legR', 'armL', 'armR']) u[k].rotation.set(0, 0, 0); u.head.rotation.set(0, 0, 0); body.rotation.set(0, 0, 0); body.position.set(0, 0, 0); }
-function placeVillagers(R, ids, slots) {
-  for (const v of villagers) { if (!ids.includes(v.def.id)) continue; const t = slots[v.def.id === 'mom' ? 'dad' : v.def.id]; v.R = R; v.t0 = v.tt = t; v.dir = Math.random() < 0.5 ? 1 : -1; v.side = Math.random() < 0.5 ? 1 : -1; const q = routeAt(R, t); const off = ['sweep', 'exercise', 'wai', 'boy'].includes(v.def.beh) ? 2.5 : 1.3; v.bx = q.x - q.dz * v.side * off; v.bz = q.z + q.dx * v.side * off; v.g.position.set(v.bx, 0, v.bz); v.g.rotation.y = Math.atan2(q.dz * v.side, -q.dx * v.side); v.base = v.g.rotation.y; v.g.visible = true; v.near = false; v.bb.material.opacity = 0; }
+const STATIC_BEH = ['sweep', 'exercise', 'wai', 'boy', 'meditate'];
+function placeLeader(v, R, t) {
+  v.R = R; v.t0 = v.tt = t; v.dir = Math.random() < 0.5 ? 1 : -1; v.side = Math.random() < 0.5 ? 1 : -1;
+  const q = routeAt(R, t), off = v.def.off || (STATIC_BEH.includes(v.def.beh) ? 2.5 : 1.3); v.bx = q.x - q.dz * v.side * off; v.bz = q.z + q.dx * v.side * off;
+  v.g.position.set(v.bx, 0, v.bz); v.g.rotation.y = Math.atan2(q.dz * v.side, -q.dx * v.side); v.base = v.g.rotation.y; v.g.visible = true; v.near = false; v.bb.material.opacity = 0;
+  for (const f of villagers) if (f.def.follow === v.def.id) { f.R = R; f.g.visible = true; f.near = false; f.bb.material.opacity = 0; }
 }
 function hideVillagers() { for (const v of villagers) v.g.visible = false; }
+function scatterVillagers(R) { hideVillagers(); const L = villagers.filter(v => !v.def.follow), n = L.length, ts = shuffle(L.map((_, i) => 0.08 + (i + 0.5) / n * 0.84)); L.forEach((v, i) => placeLeader(v, R, clamp(ts[i] + (Math.random() - 0.5) * 0.03, 0.06, 0.94))); }
+function scatterAll() { hideVillagers(); const L = shuffle(villagers.filter(v => !v.def.follow)); L.forEach((v, i) => placeLeader(v, ROUTES[i % ROUTES.length], 0.15 + Math.random() * 0.7)); }
 function updateVillagers(dt, t, p) {
-  const dad = villagers[1];
+  for (const v of villagers) { if (!v.g.visible) continue; const d = Math.hypot(p.x - v.g.position.x, p.z - v.g.position.z); v.dist = d; v.near = d < 7.5; v.gNear = v.near; }
+  for (const v of villagers) if (v.g.visible && v.def.follow && v.near) VBY[v.def.follow].gNear = true;
   for (const v of villagers) {
-    if (!v.g.visible) continue; const u = v.u, g = v.g, body = v.body, beh = v.def.beh, d = Math.hypot(p.x - g.position.x, p.z - g.position.z), near = d < 7.5, T0 = t + v.ph;
-    if (near && !v.near) { v.li = (v.li + 1) % v.def.lines.length; v.bb.userData.set(v.def.lines[v.li]); if (AC) blip(520 + Math.random() * 200, 0.08, 'sine', 0.03); } v.near = near;
+    if (!v.g.visible) continue; const u = v.u, g = v.g, body = v.body, beh = v.def.beh, near = v.near, T0 = t + v.ph, lead = v.def.follow ? VBY[v.def.follow] : v, stop = lead.gNear;
+    body.visible = v.dist < 120; if (!body.visible) { v.bb.material.opacity = 0; if (!['walk', 'mom', 'monk', 'student'].includes(beh)) continue; }
+    if (near && !v.wasNear) { v.li = (v.li + 1) % v.def.lines.length; v.bb.userData.set(v.def.lines[v.li]); if (AC) blip(520 + Math.random() * 200, 0.08, 'sine', 0.03); } v.wasNear = near;
     v.bb.material.opacity = lerp(v.bb.material.opacity, near ? 1 : 0, 0.15);
     resetPose(u, body);
     const face = () => { const a = Math.atan2(p.x - g.position.x, p.z - g.position.z); let df = a - g.rotation.y; df = Math.atan2(Math.sin(df), Math.cos(df)); g.rotation.y += df * Math.min(1, dt * 6); };
     const wave = arm => { if (arm === u.armR) arm.rotation.z = 2.5 + Math.sin(t * 8) * 0.35; else arm.rotation.z = -2.5 - Math.sin(t * 8) * 0.35; };
-    if (beh === 'walk' || beh === 'mom') {
-      const lead = beh === 'mom' ? dad : v;
-      if (beh === 'walk') { if (!near) { v.tt += v.dir * dt * 1.0 / v.R.len; if (v.tt > Math.min(0.93, v.t0 + 11 / v.R.len)) v.dir = -1; if (v.tt < Math.max(0.06, v.t0 - 11 / v.R.len)) v.dir = 1; } }
-      const q = routeAt(lead.R, lead.tt), lat = (beh === 'mom' ? 2.15 : 1.3) * lead.side; g.position.set(q.x - q.dz * lat, 0, q.z + q.dx * lat);
-      const stopped = lead.near || near && beh === 'mom' && lead.near;
-      if (lead.near) { face(); if (beh === 'walk') wave(u.armR); } else { g.rotation.y = Math.atan2(q.dx * lead.dir, q.dz * lead.dir); const s = Math.sin(T0 * 4.6) * 0.5; u.legL.rotation.x = s; u.legR.rotation.x = -s; if (beh === 'walk') { u.armL.rotation.x = -s * 0.7; u.armR.rotation.x = s * 0.7; } }
-      if (beh === 'mom') { u.armL.rotation.set(-1.05, 0, 0.55); u.armR.rotation.set(-1.05, 0, -0.55); body.rotation.z = Math.sin(T0 * 1.6) * 0.05; u.baby.position.y = 1.2 + Math.sin(T0 * 1.6) * 0.015; if (lead.near) body.rotation.x = 0.1; }
+    const wai = () => { u.armL.rotation.set(-1.85, 0, 0.62); u.armR.rotation.set(-1.85, 0, -0.62); body.rotation.x = 0.18 + Math.sin(t * 2) * 0.05; };
+    if (beh === 'walk' || beh === 'mom' || beh === 'monk' || beh === 'student') {
+      const spd = lead.def.slow || 1;
+      if (!v.def.follow && !stop) { v.tt += v.dir * dt * spd / v.R.len; const span = 12 / v.R.len; if (v.tt > Math.min(0.93, v.t0 + span)) v.dir = -1; if (v.tt < Math.max(0.06, v.t0 - span)) v.dir = 1; }
+      const tt = clamp(lead.tt - (v.def.lag || 0) * lead.dir / lead.R.len, 0.01, 0.99), q = routeAt(lead.R, tt), lat = lead.side * 1.3 + (v.def.latS || 0) * lead.side;
+      g.position.set(q.x - q.dz * lat, 0, q.z + q.dx * lat);
+      if (body.visible === false) continue;
+      if (stop) face(); else { g.rotation.y = Math.atan2(q.dx * lead.dir, q.dz * lead.dir); const s = Math.sin(T0 * 4.6 * Math.min(1.2, spd + 0.15)) * 0.5; u.legL.rotation.x = s; u.legR.rotation.x = -s; if (beh !== 'mom' && beh !== 'monk') { u.armL.rotation.x = -s * 0.7; u.armR.rotation.x = s * 0.7; } }
+      if (beh === 'walk' && stop) { if (v.def.opt.book) wave(u.armR); else if (v.def.opt.hoe) { u.armL.rotation.z = -2.5 - Math.sin(t * 8) * 0.35; } else wave(u.armR); }
+      if (beh === 'walk' && v.def.opt.hoe && !stop) u.armR.rotation.x = -0.2;
+      if (beh === 'mom') { u.armL.rotation.set(-1.05, 0, 0.55); u.armR.rotation.set(-1.05, 0, -0.55); body.rotation.z = Math.sin(T0 * 1.6) * 0.05; u.baby.position.y = 1.2 + Math.sin(T0 * 1.6) * 0.015; if (stop) body.rotation.x = 0.1; }
+      if (beh === 'monk') { if (v.def.opt.bowl) { u.armL.rotation.set(-0.95, 0, 0.5); u.armR.rotation.set(-0.95, 0, -0.5); if (stop) { u.head.rotation.x = 0.15 + Math.sin(t * 1.5) * 0.08; body.rotation.x = 0.06; } } else if (stop) wai(); else { u.armL.rotation.x = 0.1; u.armR.rotation.x = 0.1; } }
+      if (beh === 'student' && stop) wai();
     } else if (beh === 'boy') {
       const c = Math.floor(T0 / 4.5) % 4, k = T0 % 4.5; g.position.set(v.bx, 0, v.bz); if (near || c !== 3) face();
       if (c === 0) { u.armL.rotation.set(-2.35, 0, 0.6); u.armR.rotation.set(-2.35, 0, -0.6); body.rotation.z = Math.sin(t * 3) * 0.14; u.legL.rotation.z = -0.18; u.head.rotation.z = Math.sin(t * 3) * 0.2; }
@@ -956,10 +1075,12 @@ function updateVillagers(dt, t, p) {
       if (c === 0) { u.armL.rotation.z = -2.9; u.armR.rotation.z = 2.9; body.rotation.z = s * 0.38; }
       else if (c === 1) { const q = (s + 1) / 2; body.position.y = -q * 0.3; u.legL.rotation.set(-q * 0.9, 0, -0.2); u.legR.rotation.set(-q * 0.9, 0, 0.2); u.armL.rotation.x = u.armR.rotation.x = -1.5; }
       else { u.armL.rotation.z = -1.5; u.armR.rotation.z = 1.5; body.rotation.y = s * 0.9; } }
-    else if (beh === 'wai') { if (near) { face(); u.armL.rotation.set(-1.85, 0, 0.62); u.armR.rotation.set(-1.85, 0, -0.62); body.rotation.x = 0.22 + Math.sin(t * 2) * 0.05; } else { g.rotation.y = v.base; body.rotation.z = Math.sin(T0) * 0.03; u.head.rotation.y = Math.sin(T0 * 0.5) * 0.5; } }
+    else if (beh === 'wai') { if (near) { face(); wai(); } else { g.rotation.y = v.base; body.rotation.z = Math.sin(T0) * 0.03; u.head.rotation.y = Math.sin(T0 * 0.5) * 0.5; } }
+    else if (beh === 'meditate') { g.position.set(v.bx, 0, v.bz); if (near) face(); else g.rotation.y = v.base;
+      body.position.y = -0.8 * v.def.sc[1]; u.legL.rotation.set(-1.35, 0, 0.95); u.legR.rotation.set(-1.35, 0, -0.95); body.rotation.z = Math.sin(T0 * 0.6) * 0.02;
+      if (near) { u.armR.rotation.set(-1.75, 0, -0.1); u.armL.rotation.set(-0.55, 0, 0.35); u.head.rotation.x = Math.sin(t * 1.2) * 0.06; } else { u.armL.rotation.set(-0.55, 0, 0.35); u.armR.rotation.set(-0.55, 0, -0.35); u.head.rotation.x = 0.18; } }
   }
 }
-function scatterVillagers(R) { const ids = VDEF.map(d => d.id); const ts = shuffle([0.13, 0.27, 0.41, 0.55, 0.69, 0.83]).map(x => x + (Math.random() - 0.5) * 0.06); const slots = {}; ['boy', 'dad', 'pa', 'lung', 'yai', 'num'].forEach((id, i) => slots[id] = ts[i]); placeVillagers(R, ids, slots); }
 
 
 // ---------- statue / window / blood ----------
@@ -1176,30 +1297,118 @@ function checkGate() {
   if (game.prevAlong < 0 && along >= 0 && Math.abs(lat) < 2.75 && Math.abs(along) < 3) answer(lat < 0);
   game.prevAlong = along;
 }
-function startFree() { clearAnom(); game.route = null; game.end = null; gates.visible = false; startMark.visible = false; dynCol = []; arrows.visible = false; statue.visible = false; barricades.forEach(b => b.visible = false); placeVillagers(ROUTES[0], ['boy', 'dad', 'mom', 'num'], { boy: 0.3, dad: 0.5, num: 0.8 }); placeVillagers(ROUTES[2], ['pa', 'lung', 'yai'], { pa: 0.35, lung: 0.6, yai: 0.75 }); const s = W([796, 285]); player.pos.set(s[0], 0, s[1]); player.yaw = 0; player.yaw = Math.PI * 0 + Math.atan2(-0.1, -1) + Math.PI; env.time = 16.5; ui.obj.innerHTML = '<b>เดินสำรวจอิสระ</b><br>กด T สลับกลางวัน/กลางคืน · [ ] ปรับเวลา'; ui.score.textContent = ''; assignLamps(player.pos); }
+function startFree() { clearAnom(); game.route = null; game.end = null; gates.visible = false; startMark.visible = false; dynCol = []; arrows.visible = false; statue.visible = false; barricades.forEach(b => b.visible = false); scatterAll(); const s = W([796, 285]); player.pos.set(s[0], 0, s[1]); player.yaw = 0; player.yaw = Math.PI * 0 + Math.atan2(-0.1, -1) + Math.PI; env.time = 16.5; ui.obj.innerHTML = touchMode ? '<b>เดินสำรวจอิสระ</b><br>ปุ่ม ☀/☾ สลับกลางวัน-กลางคืน' : '<b>เดินสำรวจอิสระ</b><br>กด T สลับกลางวัน/กลางคืน · [ ] ปรับเวลา'; ui.score.textContent = ''; assignLamps(player.pos); }
 
 // ---------- input ----------
 let dragLook = false, dragging = false;
-function engage() { game.playing = true; ui.pause.style.display = 'none'; initAudio(); if (AC && AC.state === 'suspended') AC.resume();
+function engage() { game.playing = true; ui.pause.style.display = 'none'; initAudio(); if (AC && AC.state === 'suspended') AC.resume(); resetTouch(); updTouchVis(); if (touchMode) { goFull(); checkOrient(); return; }
   if (!dragLook) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => { dragLook = true; ui.tip.style.display = 'block'; }); } catch (e) { dragLook = true; ui.tip.style.display = 'block'; } } }
 document.addEventListener('pointerlockerror', () => { dragLook = true; ui.tip.style.display = 'block'; });
-document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && game.playing && !dragLook && ui.msg.style.display !== 'flex') { game.playing = false; ui.pause.style.display = 'flex'; } });
-$('resume').onclick = engage; $('toMenu').onclick = () => { ui.pause.style.display = 'none'; ui.hud.style.display = 'none'; ui.menu.style.display = 'flex'; game.mode = null; clearAnom(); gates.visible = false; arrows.visible = false; statue.visible = false; hideVillagers(); barricades.forEach(b => b.visible = false); };
-$('btnHunt').onclick = () => { game.mode = 'hunt'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; newRun(); engage(); };
-$('btnFree').onclick = () => { game.mode = 'free'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; startFree(); engage(); };
-addEventListener('mousemove', e => { if (!game.playing) return; if (document.pointerLockElement === canvas || (dragLook && dragging)) { player.yaw -= e.movementX * 0.0022; player.pitch = clamp(player.pitch - e.movementY * 0.0022, -1.45, 1.45); } });
-canvas.addEventListener('mousedown', e => { if (!game.playing) return; if (dragLook) { dragging = true; return; } if (document.pointerLockElement !== canvas) { engage(); return; } if (e.button === 0) useItem(); });
+document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && game.playing && !touchMode && !dragLook && ui.msg.style.display !== 'flex') { game.playing = false; ui.pause.style.display = 'flex'; } });
+$('resume').onclick = engage; $('toMenu').onclick = () => { ui.pause.style.display = 'none'; ui.hud.style.display = 'none'; ui.menu.style.display = 'flex'; game.mode = null; updTouchVis(); clearAnom(); gates.visible = false; arrows.visible = false; statue.visible = false; hideVillagers(); barricades.forEach(b => b.visible = false); };
+$('btnHunt').onclick = () => { game.mode = 'hunt'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); newRun(); engage(); };
+$('btnFree').onclick = () => { game.mode = 'free'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); startFree(); engage(); };
+addEventListener('mousemove', e => { if (!game.playing) return; if (document.pointerLockElement === canvas || (dragLook && dragging)) { const k = 0.0022 * cfg.sens; player.yaw -= e.movementX * k; player.pitch = clamp(player.pitch - e.movementY * k, -1.45, 1.45); } });
+canvas.addEventListener('mousedown', e => { if (!game.playing || touchMode) return; if (dragLook) { dragging = true; return; } if (document.pointerLockElement !== canvas) { engage(); return; } if (e.button === 0) useItem(); });
 addEventListener('mouseup', () => dragging = false);
 function useItem() { if (player.item === 2) { player.light = !player.light; blip(1800, 0.03, 'square', 0.05); } }
 function setItem(i) { player.item = i; if (i !== 2) player.light = false; ui.slot1.classList.toggle('on', i === 1); ui.slot2.classList.toggle('on', i === 2); }
 addEventListener('keydown', e => { keys[e.code] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.code)) e.preventDefault(); if (!game.playing) return;
   if (e.code === 'Digit1') setItem(1); if (e.code === 'Digit2') setItem(2); if (e.code === 'KeyQ') setItem(player.item === 1 ? 2 : 1);
   if (e.code === 'KeyF') { if (player.item !== 2) setItem(2); useItem(); }
-  if (e.code === 'KeyM') { bigMap = !bigMap; ui.map.classList.toggle('big', bigMap); ui.map.width = ui.map.height = bigMap ? 560 : 180; }
-  if (e.code === 'KeyP' || (e.code === 'Escape' && dragLook)) { game.playing = false; ui.pause.style.display = 'flex'; }
+  if (e.code === 'KeyM') toggleMap();
+  if (e.code === 'KeyP' || (e.code === 'Escape' && dragLook)) pauseGame();
   if (game.mode === 'free') { if (e.code === 'KeyT') env.time = (env.time > 6 && env.time < 18) ? 21 : 10; if (e.code === 'BracketRight') env.time = (env.time + 1) % 24; if (e.code === 'BracketLeft') env.time = (env.time + 23) % 24; } });
 addEventListener('keyup', e => keys[e.code] = false);
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+// ---------- settings / touch controls ----------
+const DEF_POS = { joy: [0.15, 0.7], run: [0.8, 0.6], jump: [0.92, 0.76], light: [0.7, 0.86], time: [0.57, 0.88], pause: [0.5, 0.075] };
+const CFG_KEY = 'nonsawan_cfg_v1';
+const cfg = Object.assign({ size: 1, opacity: 0.75, sens: 1, runMode: 'hold', pushRun: true, swap: false, quality: 'auto', touch: 'auto', pos: {} }, (() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch (e) { return {}; } })());
+function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) { } }
+const coarse = matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches);
+let touchMode = false, editing = false, uiScale = 1;
+const tl = $('touch'), tzone = $('tzone'), joy = $('joy'), knob = $('knob'), tbtn = {}; tl.querySelectorAll('.tb').forEach(b => tbtn[b.dataset.b] = b);
+const tin = { mx: 0, mz: 0, mag: 0, runHold: false, runToggle: false, jump: false };
+let joyId = null, lookId = null, joyC = [0, 0], lookLast = [0, 0], drag = null;
+const inJoyHalf = x => cfg.swap ? x > innerWidth * 0.5 : x < innerWidth * 0.5;
+function posOf(id) { const p = cfg.pos[id] || DEF_POS[id]; return [(cfg.swap ? 1 - p[0] : p[0]) * innerWidth, p[1] * innerHeight]; }
+function setKnob(dx, dy) { knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }
+function layoutTouch() {
+  const s = cfg.size * clamp(Math.min(innerWidth, innerHeight) / 390, 1, 1.4), Bz = Math.round(64 * s), J = Math.round(132 * s); uiScale = s;
+  for (const id in tbtn) { const [x, y] = posOf(id), b = tbtn[id], z = id === 'pause' ? Math.round(Bz * 0.68) : Bz; b.style.left = x + 'px'; b.style.top = y + 'px'; b.style.width = b.style.height = z + 'px'; b.style.fontSize = Math.round(10.5 * s) + 'px'; b.style.opacity = cfg.opacity; }
+  joy.style.width = joy.style.height = J + 'px'; knob.style.width = knob.style.height = Math.round(J * 0.42) + 'px'; joy.style.opacity = cfg.opacity;
+  if (joyId === null) { const [x, y] = posOf('joy'); joy.style.left = x + 'px'; joy.style.top = y + 'px'; }
+}
+function updTouchVis() { tl.style.display = touchMode && (ui.hud.style.display === 'block' || editing) ? 'block' : 'none'; tl.classList.toggle('edit', editing); document.body.classList.toggle('free', game.mode === 'free'); }
+function resetTouch() { joyId = lookId = null; tin.mx = tin.mz = tin.mag = 0; tin.runHold = false; tin.jump = false; setKnob(0, 0); joy.classList.remove('act'); tbtn.run.classList.toggle('on', tin.runToggle); layoutTouch(); }
+function applyTouchMode() { touchMode = cfg.touch === 'on' || (cfg.touch === 'auto' && coarse); document.body.classList.toggle('touchmode', touchMode); layoutTouch(); updTouchVis(); checkOrient(); }
+function applyQuality() {
+  const q = cfg.quality === 'auto' ? (coarse ? 'low' : 'high') : cfg.quality, pr = { low: 1, medium: 1.25, high: 1.5 }[q], ms = q === 'high' ? 2048 : 1024, sh = q !== 'low';
+  renderer.setPixelRatio(Math.min(devicePixelRatio, pr));
+  if (sun.castShadow !== sh || sun.shadow.mapSize.x !== ms) { sun.castShadow = sh; sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  resize();
+}
+function pauseGame() { if (!game.playing) return; game.playing = false; resetTouch(); ui.pause.style.display = 'flex'; if (document.pointerLockElement) document.exitPointerLock(); }
+function lockLand() { try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+function goFull() { const d = document.documentElement; try { if (!document.fullscreenElement && !document.webkitFullscreenElement) { const f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) { const p = f.call(d, { navigationUI: 'hide' }); if (p && p.then) p.then(lockLand).catch(() => { }); else lockLand(); } } else lockLand(); } catch (e) { } }
+function checkOrient() { const show = touchMode && innerHeight > innerWidth; $('rotate').style.display = show ? 'flex' : 'none'; if (show && game.playing) pauseGame(); }
+function toggleMap() { bigMap = !bigMap; ui.map.classList.toggle('big', bigMap); ui.map.width = ui.map.height = bigMap ? 560 : 180; }
+// look + joystick zone
+tzone.addEventListener('pointerdown', e => {
+  if (!game.playing || editing) return; e.preventDefault();
+  const r = ui.map.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) { toggleMap(); return; }
+  if (inJoyHalf(e.clientX) && joyId === null) { joyId = e.pointerId; joyC = [e.clientX, e.clientY]; joy.style.left = e.clientX + 'px'; joy.style.top = e.clientY + 'px'; joy.classList.add('act'); setKnob(0, 0); }
+  else if (lookId === null) { lookId = e.pointerId; lookLast = [e.clientX, e.clientY]; }
+  else return;
+  try { tzone.setPointerCapture(e.pointerId); } catch (_) { }
+});
+tzone.addEventListener('pointermove', e => {
+  if (e.pointerId === joyId) { const R = 62 * uiScale; let dx = e.clientX - joyC[0], dy = e.clientY - joyC[1]; const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; } setKnob(dx, dy); tin.mx = dx / R; tin.mz = dy / R; tin.mag = Math.min(1, d / R); }
+  else if (e.pointerId === lookId) { const k = 0.0058 * cfg.sens; player.yaw -= (e.clientX - lookLast[0]) * k; player.pitch = clamp(player.pitch - (e.clientY - lookLast[1]) * k, -1.45, 1.45); lookLast = [e.clientX, e.clientY]; }
+});
+const endPtr = e => { if (e.pointerId === joyId) { joyId = null; tin.mx = tin.mz = tin.mag = 0; setKnob(0, 0); joy.classList.remove('act'); layoutTouch(); } if (e.pointerId === lookId) lookId = null; };
+tzone.addEventListener('pointerup', endPtr); tzone.addEventListener('pointercancel', endPtr);
+// buttons
+function press(id, down) {
+  if (editing) return; if (!game.playing && id !== 'pause') return;
+  if (id === 'run') { if (cfg.runMode === 'hold') tin.runHold = down; else if (down) tin.runToggle = !tin.runToggle; tbtn.run.classList.toggle('on', tin.runHold || tin.runToggle); return; }
+  tbtn[id].classList.toggle('down', down); if (!down) return;
+  if (id === 'jump') tin.jump = true;
+  if (id === 'light') { if (player.item !== 2) setItem(2); useItem(); }
+  if (id === 'pause') pauseGame();
+  if (id === 'time' && game.mode === 'free') env.time = (env.time > 6 && env.time < 18) ? 21 : 10;
+}
+function startDrag(e, id, el) { e.preventDefault(); e.stopPropagation(); drag = { id, el, pid: e.pointerId }; try { el.setPointerCapture(e.pointerId); } catch (_) { } }
+for (const id in tbtn) { const b = tbtn[id];
+  b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (editing) return startDrag(e, id, b); try { b.setPointerCapture(e.pointerId); } catch (_) { } press(id, true); });
+  b.addEventListener('pointerup', () => press(id, false)); b.addEventListener('pointercancel', () => press(id, false)); b.addEventListener('contextmenu', e => e.preventDefault()); }
+joy.addEventListener('pointerdown', e => { if (editing) startDrag(e, 'joy', joy); });
+addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.pid) return; const fx = clamp(e.clientX / innerWidth, 0.04, 0.96), fy = clamp(e.clientY / innerHeight, 0.05, 0.95); cfg.pos[drag.id] = [cfg.swap ? 1 - fx : fx, fy]; layoutTouch(); });
+addEventListener('pointerup', e => { if (drag && e.pointerId === drag.pid) { drag = null; saveCfg(); } });
+// settings panel
+let setFrom = null;
+function syncSettings() {
+  document.querySelectorAll('#settings .seg').forEach(sg => { const k = sg.dataset.k; sg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(cfg[k]) === b.dataset.v)); });
+  $('sSens').value = cfg.sens; $('vsens').textContent = Number(cfg.sens).toFixed(1) + '×'; $('sSize').value = cfg.size; $('vsize').textContent = Math.round(cfg.size * 100) + '%'; $('sOp').value = cfg.opacity; $('vop').textContent = Math.round(cfg.opacity * 100) + '%';
+}
+function openSettings(from) { setFrom = from; from.style.display = 'none'; $('settings').style.display = 'flex'; syncSettings(); }
+function closeSettings() { $('settings').style.display = 'none'; if (setFrom) setFrom.style.display = 'flex'; saveCfg(); }
+document.querySelectorAll('#settings .seg').forEach(sg => sg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const k = sg.dataset.k, v = b.dataset.v; cfg[k] = v === 'true' ? true : v === 'false' ? false : v; if (k === 'touch') applyTouchMode(); if (k === 'quality') applyQuality(); if (k === 'swap' || k === 'runMode') { tin.runToggle = false; resetTouch(); } syncSettings(); saveCfg(); }));
+$('sSens').addEventListener('input', e => { cfg.sens = +e.target.value; syncSettings(); });
+$('sSize').addEventListener('input', e => { cfg.size = +e.target.value; syncSettings(); layoutTouch(); });
+$('sOp').addEventListener('input', e => { cfg.opacity = +e.target.value; syncSettings(); layoutTouch(); });
+$('setClose').onclick = closeSettings; $('btnSet').onclick = () => openSettings(ui.menu); $('pSet').onclick = () => openSettings(ui.pause);
+$('btnFull').onclick = () => goFull();
+$('btnEdit').onclick = () => { $('settings').style.display = 'none'; editing = true; $('editbar').style.display = 'flex'; updTouchVis(); layoutTouch(); };
+$('editDone').onclick = () => { editing = false; $('editbar').style.display = 'none'; updTouchVis(); saveCfg(); $('settings').style.display = 'flex'; };
+$('editReset').onclick = () => { cfg.pos = {}; layoutTouch(); saveCfg(); };
+addEventListener('resize', () => { layoutTouch(); checkOrient(); });
+addEventListener('orientationchange', () => setTimeout(() => { resize(); layoutTouch(); checkOrient(); }, 250));
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('contextmenu', e => { if (touchMode) e.preventDefault(); });
 
 // ---------- loop ----------
 const clock = new T.Clock(); let tAll = 0, stepPhase = 0, mapT = 0;
@@ -1209,14 +1418,16 @@ function update(dt) {
   if (game.playing) {
     env.time = (env.time + dt * env.speed * (game.mode === 'hunt' ? 0.5 : 1)) % 24;
     let fx = 0, fz = 0; if (keys.KeyW || keys.ArrowUp) fz -= 1; if (keys.KeyS || keys.ArrowDown) fz += 1; if (keys.KeyA || keys.ArrowLeft) fx -= 1; if (keys.KeyD || keys.ArrowRight) fx += 1;
-    const moving = fx || fz; const wantRun = (keys.ShiftLeft || keys.ShiftRight) && moving && fz < 0.5;
+    let amt = 1, tMove = false; if (touchMode && tin.mag > 0.12) { fx = tin.mx; fz = tin.mz; amt = clamp((tin.mag - 0.12) / 0.6, 0.35, 1); tMove = true; }
+    const moving = fx || fz; const wantRun = (keys.ShiftLeft || keys.ShiftRight || tin.runHold || tin.runToggle || (tMove && cfg.pushRun && tin.mag > 0.93)) && moving && fz < 0.5;
     if (wantRun && player.stamina > 0.02 && !player.tired) player.running = true; else player.running = false;
     if (player.running) { player.stamina = Math.max(0, player.stamina - dt / 9); if (player.stamina <= 0.02) player.tired = true; } else { player.stamina = Math.min(1, player.stamina + dt / 6); if (player.stamina > 0.3) player.tired = false; }
-    const sp = player.running ? 9.2 : 4.4; if (moving) { const l = Math.hypot(fx, fz); fx /= l; fz /= l; const s = Math.sin(player.yaw), c = Math.cos(player.yaw); player.pos.x += (fx * c + fz * s) * sp * dt; player.pos.z += (-fx * s + fz * c) * sp * dt; }
+    const sp = player.running ? 9.2 : 4.4 * amt; if (moving) { const l = Math.hypot(fx, fz); fx /= l; fz /= l; const s = Math.sin(player.yaw), c = Math.cos(player.yaw); player.pos.x += (fx * c + fz * s) * sp * dt; player.pos.z += (-fx * s + fz * c) * sp * dt; }
     player.moveAmt = lerp(player.moveAmt, moving ? 1 : 0, 1 - Math.pow(0.001, dt));
-    if (keys.Space && player.onGround) { player.vy = 5.2; player.onGround = false; }
+    if ((keys.Space || tin.jump) && player.onGround) { player.vy = 5.2; player.onGround = false; } tin.jump = false;
     player.vy -= 15 * dt; player.pos.y += player.vy * dt; if (player.pos.y <= 0) { player.pos.y = 0; player.vy = 0; player.onGround = true; }
-    collide(player.pos); player.pos.x = clamp(player.pos.x, BOUND.x0, BOUND.x1); player.pos.z = clamp(player.pos.z, BOUND.z0, BOUND.z1);
+    collide(player.pos); for (const v of villagers) { if (!v.g.visible || !v.body.visible) continue; const dx = player.pos.x - v.g.position.x, dz = player.pos.z - v.g.position.z, d = Math.hypot(dx, dz), m = v.def.sc[0] < 0.85 ? 0.55 : 0.65; if (d < m && d > 1e-4) { player.pos.x += dx / d * (m - d); player.pos.z += dz / d * (m - d); } }
+    player.pos.x = clamp(player.pos.x, BOUND.x0, BOUND.x1); player.pos.z = clamp(player.pos.z, BOUND.z0, BOUND.z1);
     if (moving && player.onGround) { player.bob += dt * (player.running ? 11.5 : 7.5); stepPhase += dt * (player.running ? 11.5 : 7.5); if (stepPhase > Math.PI) { stepPhase -= Math.PI; step(); } }
     if (game.mode === 'hunt' && game.route) { player.pos.x = clamp(player.pos.x, HUNT_BOUND.x0, HUNT_BOUND.x1); player.pos.z = clamp(player.pos.z, HUNT_BOUND.z0, HUNT_BOUND.z1); checkGate(); }
   }
@@ -1232,13 +1443,13 @@ function update(dt) {
   lampTimer -= dt; if (lampTimer < 0) { lampTimer = 0.6; assignLamps(player.pos); }
   { const p = ffG.attributes.position; for (let i = 0; i < p.count; i++) { const b = i * 4; p.setXYZ(i, ffBase[b] + Math.sin(tAll * 0.5 + ffBase[b + 3]) * 1.5, ffBase[b + 1] + Math.sin(tAll * 0.9 + ffBase[b + 3] * 2) * 0.4, ffBase[b + 2] + Math.cos(tAll * 0.4 + ffBase[b + 3]) * 1.5); } p.needsUpdate = true; }
   if (cricketGain) cricketGain.gain.value = env.night * 0.9;
-  mapT -= dt; if (mapT < 0 && game.mode) { mapT = 0.08; drawMap(); const h = Math.floor(env.time), m = Math.floor((env.time % 1) * 60); ui.time.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} น. ${env.e > 0.05 ? '☀' : '☾'}`; ui.loc.textContent = locName(); ui.stam.style.width = (player.stamina * 100) + '%'; ui.stam.style.background = player.tired ? '#e0503a' : '#e8e2c8'; }
+  mapT -= dt; if (mapT < 0 && game.mode) { mapT = 0.08; drawMap(); const h = Math.floor(env.time), m = Math.floor((env.time % 1) * 60); ui.time.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} น. ${env.e > 0.05 ? '☀' : '☾'}`; ui.loc.textContent = locName(); ui.stam.style.width = (player.stamina * 100) + '%'; ui.stam.style.background = player.tired ? '#e0503a' : '#e8e2c8'; if (touchMode) tbtn.light.classList.toggle('on', player.light && player.item === 2); }
 }
 function frame() { const dt = Math.min(clock.getDelta(), 0.05); update(dt); renderer.render(scene, camera); requestAnimationFrame(frame); }
 // menu backdrop camera
 { const s = W([760, 300]); player.pos.set(s[0], 0, s[1]); player.yaw = 0.9; player.pitch = 0.02; env.time = 17.6; assignLamps(player.pos); }
-setItem(1);
-window.__g = { drawScare, addAnom, villagers, game, player, env, ANOMS, ROUTES, routeAt, startRound, answer, scene, lots, engage };
+setItem(1); applyQuality(); applyTouchMode();
+window.__g = { cfg, tin, applyTouchMode, layoutTouch, drawScare, addAnom, villagers, game, player, env, ANOMS, ROUTES, routeAt, startRound, answer, scene, lots, engage };
 frame();
 })();
 </script>

@@ -112,7 +112,7 @@ input[type=range]{width:min(220px,48vw);accent-color:#f1ecd9;height:28px}
   <div id="tip">ลากเมาส์ค้างเพื่อหันมอง · กด F เปิดไฟฉาย · P หยุดเกม</div>
   <div id="flash"></div>
   <div id="hurt"></div><div id="lowhp"></div><div id="bl">HP <span id="hpn">100</span><div id="hp"><div id="hpfill"></div></div>แรงวิ่ง<div id="stam"><div id="stamfill"></div></div></div>
-  <div id="bar"><div class="slot" id="slot1"><kbd>1</kbd>มือเปล่า</div><div class="slot" id="slot2"><kbd>2</kbd>ไฟฉาย</div><div class="slot" id="slot3"><kbd>3</kbd>ลูกซองอาคม <b id="ammo">3/3</b></div></div>
+  <div id="bar"><div class="slot" id="slot1"><kbd>1</kbd>มือเปล่า</div><div class="slot" id="slot2"><kbd>2</kbd>ไฟฉาย</div><div class="slot" id="slot3"><kbd>3</kbd>ลูกซองอาคม <b id="ammo">3/3</b></div><div class="slot" id="slot4"><kbd>4</kbd>RPG <b id="rpgAmmo">1/1</b></div></div>
 </div>
 <div id="touch"><div id="tzone"></div><div id="joy"><div id="knob"></div></div>
   <button class="tb" data-b="run" aria-label="วิ่ง"><svg viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg>วิ่ง</button>
@@ -5094,16 +5094,55 @@ function fireGun() {
     else burst(hit.point, 0xb8a888, 6); }
   for (const v of hitV) { if (v.u || v.def) reactToPunch(v); hurt(50, 'คุณยิงคนบริสุทธิ์ บาปตามสนองทันที'); }
   camera.getWorldDirection(_fw); _fw.y = 0; _fw.normalize();
-  for (const a of hitA) { if (!a.eye) continue; const b = a.body || a.g; let t = 0; // ghosts don't die: shoved ~6m back, then resume
+  for (const a of hitA) { if (!a.eye && a.key !== 'krahang') continue; a.hits = (a.hits || 0) + 1;
+    if (a.hits >= 3) { dissolveGhost(a); continue; } if (!a.eye) continue; const b = a.body || a.g; let t = 0; // ghosts don't die: shoved ~6m back, then resume
     const push = () => { const dt = 1 / 60, sp = 14 * (1 - t / 0.45); b.position.x += _fwc.x * sp * dt; b.position.z += _fwc.z * sp * dt; t += dt; if (t < 0.45) requestAnimationFrame(push); };
     const _fwc = _fw.clone(); push(); }
   if (shot.ammo === 0) setTimeout(reloadGun, 400);
 }
-function updGun(dt) { villageFx(dt); shot.cd = Math.max(0, shot.cd - dt); if (shot.reload > 0) { shot.reload -= dt; gun.userData.pump.position.z = -0.3 + Math.sin(Math.max(0, shot.reload) * 17) * 0.04; if (shot.reload <= 0) { shot.ammo = 3; gun.userData.pump.position.z = -0.3; updAmmo(); } }
+// 3rd hit: ghost spins up, glows and fades out for good (still counts as an anomaly this round)
+function dissolveGhost(a) { let i = game.anoms.indexOf(a); if (i >= 0) { game.anoms.splice(i, 1); game.killed = true; } i = extraGhosts.indexOf(a); if (i >= 0) extraGhosts.splice(i, 1);
+  const g = a.g, b = a.body || g, p0 = b.getWorldPosition(new T.Vector3()); burst(p0.clone().setY(p0.y + 1.2), 0x9affd0, 24); scream();
+  g.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; if (o.material.emissive) o.material.emissive.set(0x40ffb0); } });
+  let t = 0; const f = () => { t += 1 / 60; b.position.y += 0.03; b.rotation.y += 0.25; g.traverse(o => { if (o.material) o.material.opacity = Math.max(0, 1 - t); }); if (t < 1) requestAnimationFrame(f); else { scene.remove(g); a.dispose && a.dispose(); } }; f(); }
+// ---------- RPG (slot 4): one rocket, auto-reload 2s; any ghost within 6m of the blast is destroyed ----------
+const rpg = new T.Group(); { const olive = new T.MeshStandardMaterial({ color: 0x4a5236, roughness: 0.6, metalness: 0.3 }), steel = new T.MeshStandardMaterial({ color: 0x2a2c2e, roughness: 0.5, metalness: 0.6 }), wood = new T.MeshStandardMaterial({ color: 0x7a3a1c, roughness: 0.7 });
+  const add = (geo, mat, x, y, z, rx = Math.PI / 2) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.x = rx; rpg.add(m); return m; };
+  add(new T.CylinderGeometry(0.035, 0.035, 0.8, 12), steel, 0, 0, -0.05); add(new T.CylinderGeometry(0.045, 0.045, 0.26, 12), wood, 0, 0, 0.05);
+  add(new T.CylinderGeometry(0.08, 0.035, 0.14, 14), steel, 0, 0, 0.42); // flared rear
+  rpg.userData.head = new T.Group(); rpg.add(rpg.userData.head); { const h = rpg.userData.head, a2 = (geo, z) => { const m = new T.Mesh(geo, olive); m.rotation.x = -Math.PI / 2; m.position.z = z; h.add(m); };
+    a2(new T.SphereGeometry(0.06, 14, 10), -0.52); a2(new T.ConeGeometry(0.06, 0.2, 14), -0.65); a2(new T.CylinderGeometry(0.02, 0.02, 0.1, 8), -0.42); }
+  add(new T.CylinderGeometry(0.018, 0.018, 0.14, 10), steel, -0.06, 0.06, -0.12); add(new T.BoxGeometry(0.02, 0.05, 0.02), steel, -0.04, 0.04, -0.12, 0);
+  add(new T.BoxGeometry(0.03, 0.1, 0.045), wood, 0, -0.09, -0.08, 0.2); add(new T.BoxGeometry(0.03, 0.1, 0.045), wood, 0, -0.09, 0.12, 0.2); }
+rpg.position.set(0.2, -0.2, -0.55); rpg.scale.setScalar(0.75); rpg.visible = false; hands.add(rpg);
+const rk = { ammo: 1, reload: 0, list: [] };
+function rpgHud() { const el = document.getElementById('rpgAmmo'); if (el) el.textContent = rk.reload > 0 ? 'รีโหลด…' : rk.ammo + '/1'; }
+function fireRpg() { if (rk.ammo <= 0 || rk.reload > 0) return; rk.ammo = 0; rk.reload = 2; rpgHud(); rpg.userData.head.visible = false; rpg.userData.kick = 1;
+  noiseHit(0.5, { f: 400, q: 0.4, vol: 0.3 }); noiseHit(0.9, { f: 1800, q: 0.6, vol: 0.12 });
+  const dir = camera.getWorldDirection(new T.Vector3()), m = new T.Mesh(new T.ConeGeometry(0.06, 0.3, 10), new T.MeshBasicMaterial({ color: 0x4a5236 })); m.userData.fx = 1;
+  const glow = new T.Mesh(fxGeo, new T.MeshBasicMaterial({ color: 0xffa030 })); glow.userData.fx = 1; glow.scale.setScalar(0.08); glow.position.y = -0.18; m.add(glow);
+  m.position.copy(camera.position).addScaledVector(dir, 0.8); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); scene.add(m); rk.list.push({ m, dir, life: 3 }); }
+function explode(p) { const P = player.pos;
+  burst(p, 0xff8a20, 30); burst(p, 0xffe060, 20); burst(p, 0x3a3a3a, 20);
+  const fl = new T.Mesh(fxGeo, new T.MeshBasicMaterial({ color: 0xffb040, transparent: true })); fl.userData.fx = 1; fl.position.copy(p); scene.add(fl); let t = 0; const f = () => { t += 1 / 60; fl.scale.setScalar(0.5 + t * 14); fl.material.opacity = 1 - t / 0.4; if (t < 0.4) requestAnimationFrame(f); else scene.remove(fl); }; f();
+  noiseHit(1.4, { f: 90, q: 0.4, vol: 0.5 }); noiseHit(0.6, { f: 600, q: 0.5, vol: 0.25 }); player.shake = Math.max(player.shake || 0, 0.6);
+  const near = (o, r) => { const w = o.getWorldPosition(new T.Vector3()); return Math.hypot(w.x - p.x, w.z - p.z) < r; };
+  for (const a of game.anoms.concat(extraGhosts)) if ((a.eye || a.key === 'krahang') && near(a.body || a.g, 6)) dissolveGhost(a);
+  for (const d of dwellers) if (d.g.visible && near(d.g, 6)) { if (d.ghost) { d.g.visible = false; d.ghost = false; } else { d.g.visible = false; hurt(50, 'คุณระเบิดใส่คนบริสุทธิ์'); } }
+  let hitV = false; for (const v of villagers) if (v.g.visible && near(v.g, 6)) { hitV = true; reactToPunch(v); } if (hitV) hurt(50, 'คุณระเบิดใส่คนบริสุทธิ์');
+  const pd = Math.hypot(P.x - p.x, P.z - p.z); if (pd < 5) hurt(Math.round(60 * (1 - pd / 5)) + 10, 'โดนแรงระเบิดตัวเอง'); }
+function updRpg(dt) {
+  if (rk.reload > 0) { rk.reload -= dt; if (rk.reload <= 0) { rk.ammo = 1; rpg.userData.head.visible = true; rpgHud(); noiseHit(0.08, { f: 900, q: 2, vol: 0.06 }); } }
+  const k = rpg.userData.kick || 0; rpg.position.z = -0.55 + k * 0.12; rpg.userData.kick = Math.max(0, k - dt * 3);
+  for (let i = rk.list.length - 1; i >= 0; i--) { const r = rk.list[i], step = 38 * dt; r.life -= dt;
+    gunRay.set(r.m.position, r.dir); gunRay.far = step; gunRay.camera = camera; const hit = gunRay.intersectObjects(scene.children, true).find(h => h.object.visible && !h.object.isSprite && h.object !== sky && !h.object.userData.fx && h.object.material && !h.object.material.transparent);
+    if (hit || r.life <= 0 || r.m.position.y < 0) { explode(hit ? hit.point : r.m.position.clone()); scene.remove(r.m); rk.list.splice(i, 1); continue; }
+    r.m.position.addScaledVector(r.dir, step); if (Math.random() < 0.6) burst(r.m.position.clone(), 0x9a9a9a, 1); } }
+function updGun(dt) { villageFx(dt); updRpg(dt); shot.cd = Math.max(0, shot.cd - dt); if (shot.reload > 0) { shot.reload -= dt; gun.userData.pump.position.z = -0.3 + Math.sin(Math.max(0, shot.reload) * 17) * 0.04; if (shot.reload <= 0) { shot.ammo = 3; gun.userData.pump.position.z = -0.3; updAmmo(); } }
   const k = gun.userData.kick || 0; gun.rotation.x = k * 0.5; gun.position.z = -0.38 + k * 0.08; gun.userData.kick = Math.max(0, k - dt * 5); const f = gun.userData.flash.material; f.opacity = Math.max(0, f.opacity - dt * 12); }
 function poseHands(t, dt) {
   const mv = player.moveAmt, run = player.running ? 1 : 0, sw = Math.sin(player.bob), sw2 = Math.cos(player.bob * 2);
-  const hasF = player.item === 2; handR.visible = player.item === 1; gun.visible = player.item === 3; handGrip.visible = hasF;
+  const hasF = player.item === 2; handR.visible = player.item === 1; gun.visible = player.item === 3; rpg.visible = player.item === 4; handGrip.visible = hasF;
   const amp = 0.018 + run * 0.05;
   handL.position.set(-0.27, -0.27 + sw2 * amp * mv * 0.5 + Math.sin(t * 1.3) * 0.004, -0.42 + sw * amp * mv * 1.6); handL.rotation.set(0.32 + run * 0.25 * mv, -0.3, 0.45);
   handR.position.set(0.27, -0.27 + sw2 * amp * mv * 0.5 + Math.sin(t * 1.3 + 1) * 0.004, -0.42 - sw * amp * mv * 1.6); handR.rotation.set(0.32 + run * 0.25 * mv, 0.3, -0.45);
@@ -5151,7 +5190,7 @@ function ambTick(dt) { if (!AC) return;
 
 // ---------- UI ----------
 const $ = id => document.getElementById(id);
-const ui = { menu: $('menu'), hud: $('hud'), vig: $('vig'), scare: $('scare'), scareC: $('scareC'), time: $('time'), loc: $('loc'), stam: $('stamfill'), slot1: $('slot1'), slot2: $('slot2'), slot3: $('slot3'), obj: $('obj'), score: $('score'), flash: $('flash'), msg: $('msg'), msgT: $('msgT'), msgS: $('msgS'), msgB: $('msgB'), pause: $('pause'), map: $('map'), fade: $('fade'), tip: $('tip') };
+const ui = { menu: $('menu'), hud: $('hud'), vig: $('vig'), scare: $('scare'), scareC: $('scareC'), time: $('time'), loc: $('loc'), stam: $('stamfill'), slot1: $('slot1'), slot2: $('slot2'), slot3: $('slot3'), slot4: $('slot4'), obj: $('obj'), score: $('score'), flash: $('flash'), msg: $('msg'), msgT: $('msgT'), msgS: $('msgS'), msgB: $('msgB'), pause: $('pause'), map: $('map'), fade: $('fade'), tip: $('tip') };
 const mapBase = document.createElement('canvas'); mapBase.width = mapBase.height = 400;
 const MX = x => (x - GX0) / GS * 400, MZ = z => (z - GZ0) / GS * 400;
 { const g = mapBase.getContext('2d'); g.fillStyle = 'rgba(20,32,22,.88)'; g.fillRect(0, 0, 400, 400); g.lineCap = g.lineJoin = 'round';
@@ -5172,7 +5211,7 @@ function drawMap() {
 // ---------- game state ----------
 const TIMES = [16.8, 17.7, 18.7, 21, 0.5];
 const game = { mode: null, playing: false, route: null, order: [], round: 0, score: 0, anoms: [], usedAnoms: [], end: null, prevAlong: -1, busy: false, best: 0 };
-function clearAnom() { game.horde = false; for (const o of extraGhosts) scene.remove(o.g); extraGhosts.length = 0; for (const d of dwellers) { d.g.visible = true; d.ghost = Math.random() < 0.4; } for (const a of game.anoms) { scene.remove(a.g); a.dispose && a.dispose(); } game.anoms = []; env.redMoon = 0; env.redLamps = 0; }
+function clearAnom() { game.horde = false; game.killed = false; for (const o of extraGhosts) scene.remove(o.g); extraGhosts.length = 0; for (const d of dwellers) { d.g.visible = true; d.ghost = Math.random() < 0.4; } for (const a of game.anoms) { scene.remove(a.g); a.dispose && a.dispose(); } game.anoms = []; env.redMoon = 0; env.redLamps = 0; }
 // anomalies go on a random village road >30m away from the arrow route, so the player has to explore
 function offRoute(R) { const H = HUNT_BOUND;
   for (let n = 0; n < 80; n++) { const sg = SEGS[Math.random() * SEGS.length | 0]; if (sg.road.id === 'hw') continue; const k = Math.random(), x = lerp(sg.ax, sg.bx, k), z = lerp(sg.az, sg.bz, k);
@@ -5203,7 +5242,7 @@ function startRound() { player.hp = 100; updHP(); for (const v of villagers) { v
 function fadeDo(fn) { game.busy = true; ui.fade.style.opacity = 1; setTimeout(() => { fn(); ui.fade.style.opacity = 0; game.busy = false; }, 450); }
 function showMsg(title, sub, btn, cls, cb) { ui.msgT.textContent = title; ui.msgT.className = cls; ui.msgS.innerHTML = sub; ui.msgB.textContent = btn; ui.msg.style.display = 'flex'; game.playing = false; if (document.pointerLockElement) document.exitPointerLock(); ui.msgB.onclick = () => { ui.msg.style.display = 'none'; cb(); engage(); }; }
 function answer(red) {
-  if (game.busy) return; const has = game.anoms.length > 0, ok = red === has;
+  if (game.busy) return; const has = game.anoms.length > 0 || !!game.killed, ok = red === has;
   if (ok) { game.score++; game.best = Math.max(game.best, game.score); tone(660, 0.25, { vol: 0.05, type: 'triangle' }); tone(990, 0.4, { vol: 0.045, type: 'triangle', delay: 0.12 });
     ui.flash.textContent = `ถูกต้อง! ${has ? 'มี' + anomNames() : 'ไม่มีอะไรผิดปกติ'} · ${game.score}/5`; ui.flash.className = 'show ok'; setTimeout(() => ui.flash.className = '', 2600);
     if (game.score >= 5) { clearAnom(); const sec = Math.round((performance.now() - game.t0) / 1000); showMsg('รอดออกจากหมู่บ้านแล้ว', `จับผิดถูกครบ 5 เส้นทางติดต่อกัน<br>ใช้เวลา ${Math.floor(sec / 60)} นาที ${sec % 60} วินาที`, 'เล่นอีกรอบ', 'ok', newRun); return; }
@@ -5341,10 +5380,10 @@ function doPunch() {
     for (const c of chickens) { if (!inFront(c.position.x, c.position.z, 1.6)) continue; noiseHit(0.1, { f: 2400, q: 3, vol: 0.06 }); const dx = c.position.x - P.x, dz = c.position.z - P.z, d = Math.hypot(dx, dz) || 1; c.userData.fdx = dx / d; c.userData.fdz = dz / d; c.userData.flee = 2.5; }
   }, 110);
 }
-function useItem() { if (player.item === 1) return doPunch(); if (player.item === 3) return fireGun(); if (player.item === 2) { player.light = !player.light; noiseHit(0.03, { f: 3200, q: 2, vol: 0.05 }); } }
-function setItem(i) { player.item = i; if (i !== 2) player.light = false; ui.slot1.classList.toggle('on', i === 1); ui.slot2.classList.toggle('on', i === 2); ui.slot3.classList.toggle('on', i === 3); }
+function useItem() { if (player.item === 1) return doPunch(); if (player.item === 3) return fireGun(); if (player.item === 4) return fireRpg(); if (player.item === 2) { player.light = !player.light; noiseHit(0.03, { f: 3200, q: 2, vol: 0.05 }); } }
+function setItem(i) { player.item = i; if (i !== 2) player.light = false; ui.slot1.classList.toggle('on', i === 1); ui.slot2.classList.toggle('on', i === 2); ui.slot3.classList.toggle('on', i === 3); ui.slot4.classList.toggle('on', i === 4); }
 addEventListener('keydown', e => { keys[e.code] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.code)) e.preventDefault(); if (!game.playing) return;
-  if (e.code === 'Digit1') setItem(1); if (e.code === 'Digit2') setItem(2); if (e.code === 'Digit3') setItem(3); if (e.code === 'KeyR' && player.item === 3) reloadGun(); if (e.code === 'KeyQ') setItem(player.item % 3 + 1);
+  if (e.code === 'Digit1') setItem(1); if (e.code === 'Digit2') setItem(2); if (e.code === 'Digit3') setItem(3); if (e.code === 'Digit4') setItem(4); if (e.code === 'KeyR' && player.item === 3) reloadGun(); if (e.code === 'KeyQ') setItem(player.item % 4 + 1);
   if (e.code === 'KeyF') { if (player.item !== 2) setItem(2); useItem(); }
   if (e.code === 'KeyM') toggleMap();
   if (e.code === 'KeyE') doPunch();

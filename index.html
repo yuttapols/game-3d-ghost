@@ -163,7 +163,7 @@ input[type=range]{width:min(220px,48vw);accent-color:#f1ecd9;height:28px}
       <kbd>Space</kbd><span>กระโดด · <kbd>M</kbd> แผนที่ใหญ่ · <kbd>Esc</kbd> หยุดเกม</span>
     </div>
   </div>
-  <div><button id="btnHunt">เริ่มเกมจับผิด</button><button id="btnFree" class="ghost">เดินสำรวจอิสระ</button><button id="btnSet" class="ghost">ตั้งค่า</button></div>
+  <div><button id="btnZombie">หนีซอมบี้ (ครอบครัว)</button><button id="btnHunt" class="ghost">เริ่มเกมจับผิด</button><button id="btnFree" class="ghost">เดินสำรวจอิสระ</button><button id="btnSet" class="ghost">ตั้งค่า</button></div>
 </div>
 <div class="overlay" id="pause" style="display:none"><h1 style="font-size:34px">หยุดชั่วคราว</h1><p class="sub">พักเกมอยู่</p><div><button id="resume">เล่นต่อ</button><button id="pSet" class="ghost">ตั้งค่า</button><button id="toMenu" class="ghost">กลับเมนู</button></div></div>
 <div class="overlay" id="msg" style="display:none"><div id="msgT"></div><div id="msgS"></div><button id="msgB"></button></div>
@@ -5339,8 +5339,8 @@ function engage() { game.playing = true; ui.pause.style.display = 'none'; initAu
 document.addEventListener('pointerlockerror', () => { dragLook = true; ui.tip.style.display = 'block'; });
 document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && game.playing && !touchMode && !dragLook && ui.msg.style.display !== 'flex') { game.playing = false; ui.pause.style.display = 'flex'; } });
 $('resume').onclick = engage; $('toMenu').onclick = () => { ui.pause.style.display = 'none'; ui.hud.style.display = 'none'; ui.menu.style.display = 'flex'; game.mode = null; updTouchVis(); clearAnom(); gates.visible = false; arrows.visible = false; statue.visible = false; hideVillagers(); barricades.forEach(b => b.visible = false); };
-$('btnHunt').onclick = () => { game.mode = 'hunt'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); newRun(); engage(); };
-$('btnFree').onclick = () => { game.mode = 'free'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); startFree(); engage(); };
+$('btnHunt').onclick = () => { zEnd(); game.mode = 'hunt'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); newRun(); engage(); };
+$('btnFree').onclick = () => { zEnd(); game.mode = 'free'; ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); startFree(); engage(); };
 addEventListener('mousemove', e => { if (!game.playing) return; if (document.pointerLockElement === canvas || (dragLook && dragging)) { const k = 0.0022 * cfg.sens; player.yaw -= e.movementX * k; player.pitch = clamp(player.pitch - e.movementY * k, -1.45, 1.45); } });
 canvas.addEventListener('mousedown', e => { if (!game.playing || touchMode) return; if (dragLook) { dragging = true; return; } if (document.pointerLockElement !== canvas) { engage(); return; } if (e.button === 0) useItem(); });
 addEventListener('mouseup', () => dragging = false);
@@ -5351,7 +5351,7 @@ player.hp = 100;
 function hitFlash(n) { const el = document.getElementById('hurt'); el.style.transition = 'none'; el.style.opacity = Math.min(1, 0.45 + n / 30); void el.offsetWidth; el.style.transition = 'opacity .55s ease-out'; el.style.opacity = 0; }
 function updHP() { document.getElementById('lowhp').style.opacity = player.hp < 40 ? (1 - player.hp / 40) * 0.9 : 0; document.getElementById('hpfill').style.width = player.hp + '%'; document.getElementById('hpn').textContent = Math.ceil(player.hp); }
 function hurt(n, why) { if (!game.playing || game.busy) return; player.hp = Math.max(0, player.hp - n); updHP(); hitFlash(n); player.shake = 0.25; noiseHit(0.12, { f: 200, q: 0.7, vol: 0.14 }); if (player.hp <= 0) die(why); }
-function die(why) { game.busy = true; for (const v of villagers) v.fight = null; showMsg('หมดสติ!', why, 'เริ่มใหม่', 'bad', () => { game.busy = false; player.hp = 100; updHP(); if (game.mode === 'free') startFree(); else newRun(); }); }
+function die(why) { game.busy = true; for (const v of villagers) v.fight = null; showMsg('หมดสติ!', why, 'เริ่มใหม่', 'bad', () => { game.busy = false; player.hp = 100; updHP(); if (game.mode === 'zombie') zStart(); else if (game.mode === 'free') startFree(); else newRun(); }); }
 // ---------- NPC personalities: how each villager reacts to being punched ----------
 const PERSONA = { num: 'bully', farmer: 'bully', dad: 'bully', lung: 'scold', yai: 'scold', pa: 'scold', monk1: 'calm', monk2: 'calm', nen: 'calm', rusi: 'calm' }; // everyone else: coward
 const PLINES = { bully: ['มึงต่อยกูทำไม!', 'เอาสิวะ! มาเลย!', 'หาเรื่องเหรอ!'], scold: ['โอ๊ย! ทำอะไรของเอ็ง!', 'เด็กสมัยนี้! ไม่มีมารยาท!', 'เดี๋ยวฟ้องผู้ใหญ่บ้านเลย!'], calm: ['เจริญพร... อย่าทำแบบนี้เลยโยม', 'โกรธไปก็เป็นทุกข์เปล่าๆ นะโยม'], coward: ['ช่วยด้วย!', 'อย่าทำร้ายฉันนะ!', 'ว้ายยย!'] };
@@ -5380,7 +5380,7 @@ function doPunch() {
     for (const c of chickens) { if (!inFront(c.position.x, c.position.z, 1.6)) continue; noiseHit(0.1, { f: 2400, q: 3, vol: 0.06 }); const dx = c.position.x - P.x, dz = c.position.z - P.z, d = Math.hypot(dx, dz) || 1; c.userData.fdx = dx / d; c.userData.fdz = dz / d; c.userData.flee = 2.5; }
   }, 110);
 }
-function useItem() { if (player.item === 1) return doPunch(); if (player.item === 3) return fireGun(); if (player.item === 4) return fireRpg(); if (player.item === 2) { player.light = !player.light; noiseHit(0.03, { f: 3200, q: 2, vol: 0.05 }); } }
+function useItem() { if (game.mode === 'zombie') return; if (player.item === 1) return doPunch(); if (player.item === 3) return fireGun(); if (player.item === 4) return fireRpg(); if (player.item === 2) { player.light = !player.light; noiseHit(0.03, { f: 3200, q: 2, vol: 0.05 }); } }
 function setItem(i) { player.item = i; if (i !== 2) player.light = false; ui.slot1.classList.toggle('on', i === 1); ui.slot2.classList.toggle('on', i === 2); ui.slot3.classList.toggle('on', i === 3); ui.slot4.classList.toggle('on', i === 4); }
 addEventListener('keydown', e => { keys[e.code] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.code)) e.preventDefault(); if (!game.playing) return;
   if (e.code === 'Digit1') setItem(1); if (e.code === 'Digit2') setItem(2); if (e.code === 'Digit3') setItem(3); if (e.code === 'Digit4') setItem(4); if (e.code === 'KeyR' && player.item === 3) reloadGun(); if (e.code === 'KeyQ') setItem(player.item % 4 + 1);
@@ -5568,8 +5568,8 @@ function update(dt) {
   }
   camera.position.set(player.pos.x, player.pos.y + player.eye + Math.sin(player.bob * 2) * 0.035 * player.moveAmt, player.pos.z);
   camera.rotation.set(player.pitch, player.yaw, Math.sin(player.bob) * 0.006 * player.moveAmt);
-  poseHands(tAll, dt);
-  const flick = updateGhost(dt); updateWatchers(dt); watchPerf(dt); if (game.playing && player.hp < 100 && !villagers.some(v => v.fight)) { player.hp = Math.min(100, player.hp + dt * 2); updHP(); } player.shake = Math.max(0, (player.shake || 0) - dt); if (player.shake > 0) { camera.rotation.x += (Math.random() - 0.5) * 0.05 * player.shake; camera.rotation.y += (Math.random() - 0.5) * 0.05 * player.shake; }
+  poseHands(tAll, dt); if (game.mode === 'zombie') zUpdate(dt);
+  const flick = updateGhost(dt); updateWatchers(dt); watchPerf(dt); if (game.playing && player.hp < 100 && !villagers.some(v => v.fight)) { player.hp = Math.min(100, player.hp + dt * (game.mode === 'zombie' ? 1 : 2)); updHP(); } player.shake = Math.max(0, (player.shake || 0) - dt); if (player.shake > 0) { camera.rotation.x += (Math.random() - 0.5) * 0.05 * player.shake; camera.rotation.y += (Math.random() - 0.5) * 0.05 * player.shake; }
   const on = player.light && player.item === 2; spot.intensity = lerp(spot.intensity, on ? (post.on ? 230 : 360) * flick : 0, 0.4); handMat.emissiveIntensity = lerp(0.35, 0.05, env.night); sleeveMat.emissiveIntensity = lerp(1, 0.2, env.night); spill.intensity = on ? 0.6 : 0; handGrip.userData.flash.userData.lens.material.color.set(on ? 0xfff6e0 : 0x333333);
   skyU.time.value = tAll; mistU.time.value = tAll; updateEnv(player.pos); drawClock(); updateChickens(dt, tAll); updateAnimals(tAll);
   for (const a of game.anoms) a.update(dt, tAll, player.pos);
@@ -5583,6 +5583,282 @@ function update(dt) {
 function frame() { const dt = Math.min(clock.getDelta(), 0.05); update(dt); if (post.on) { updateGrade(tAll); post.render(); } else { renderer.setRenderTarget(null); renderer.render(scene, camera); } requestAnimationFrame(frame); }
 // menu backdrop camera
 { const s = W([760, 300]); player.pos.set(s[0], 0, s[1]); player.yaw = 0.9; player.pitch = 0.02; env.time = 17.6; assignLamps(player.pos); }
+// ================= ZOMBIE SURVIVAL MODE (index5) =================
+// Father (player, third-person) leads mother (carrying baby) and son out of an infected village.
+// Kill zombies -> coins drop -> press B to buy weapons.
+const ZW = [ // weapons: melee (range/arc) or gun (mag/reload/pellets) or blast
+  { id: 'stick', name: 'ไม้หน้าสาม', type: 'melee', dmg: 22, cd: 0.55, range: 2.3, price: 0, col: 0x8a5a2a, len: 0.9 },
+  { id: 'knife', name: 'มีดอีโต้', type: 'melee', dmg: 38, cd: 0.32, range: 2.0, price: 60, col: 0xc8ccd0, len: 0.45 },
+  { id: 'axe', name: 'ขวาน', type: 'melee', dmg: 65, cd: 0.7, range: 2.4, price: 180, col: 0x6a6a70, len: 0.8 },
+  { id: 'katana', name: 'คาตานะ', type: 'melee', dmg: 90, cd: 0.42, range: 3.0, arc: 0.2, price: 450, col: 0xe8ecf0, len: 1.1 },
+  { id: 'pistol', name: 'ปืนพก', type: 'gun', dmg: 30, cd: 0.28, mag: 12, reload: 1.1, price: 150, col: 0x222226, len: 0.25 },
+  { id: 'uzi', name: 'ปืนกลมือ', type: 'gun', dmg: 17, cd: 0.075, mag: 32, reload: 1.5, auto: true, spread: 0.04, price: 500, col: 0x2a2a2e, len: 0.4 },
+  { id: 'shotgun', name: 'ลูกซอง', type: 'gun', dmg: 20, pellets: 8, spread: 0.07, cd: 0.8, mag: 6, reload: 2, price: 700, col: 0x6a3a1a, len: 0.8 },
+  { id: 'ak', name: 'ไรเฟิลจู่โจม', type: 'gun', dmg: 32, cd: 0.11, mag: 30, reload: 1.8, auto: true, spread: 0.02, price: 1100, col: 0x3a2a1a, len: 0.9 },
+  { id: 'sniper', name: 'สไนเปอร์', type: 'gun', dmg: 260, pierce: true, cd: 1.1, mag: 5, reload: 2.2, price: 1300, col: 0x2a3a2a, len: 1.2 },
+  { id: 'mg', name: 'ปืนกลหนัก', type: 'gun', dmg: 30, cd: 0.07, mag: 100, reload: 3.5, auto: true, spread: 0.05, price: 2200, col: 0x1a1a1c, len: 1.1 },
+  { id: 'flame', name: 'ปืนพ่นไฟ', type: 'flame', dmg: 7, cd: 0.05, mag: 120, reload: 2.5, auto: true, range: 7, price: 1800, col: 0xa02020, len: 0.8 },
+  { id: 'rpg', name: 'อาร์พีจี', type: 'rpg', dmg: 400, radius: 6, cd: 0.6, mag: 1, reload: 2, price: 2500, col: 0x4a5236, len: 1.0 },
+];
+const ZK = { // zombie kinds (Thai ghosts first)
+  walker: { name: 'ซอมบี้ชาวบ้าน', hp: 45, sp: 2.4, dmg: 8, cash: 5 },
+  runner: { name: 'ซอมบี้วิ่ง', hp: 35, sp: 4.6, dmg: 6, cash: 8 },
+  pret: { name: 'เปรต', hp: 160, sp: 1.8, dmg: 15, cash: 25 },
+  krasue: { name: 'กระสือ', hp: 30, sp: 5.2, dmg: 7, cash: 15, fly: true },
+  headless: { name: 'ผีหัวขาด', hp: 90, sp: 3.0, dmg: 12, cash: 18 },
+  nangram: { name: 'ผีนางรำ', hp: 60, sp: 4.2, dmg: 10, cash: 20 },
+  kuman: { name: 'กุมารทอง', hp: 28, sp: 5.6, dmg: 5, cash: 22 },
+  pop: { name: 'ผีปอบ', hp: 320, sp: 2.9, dmg: 24, cash: 60 },
+};
+const Z = { on: false, list: [], coins: [], fam: [], money: 0, kills: 0, t: 0, spawnT: 0, owned: ['stick'], wi: 0, ammo: {}, reloadT: 0, cd: 0, swing: 0, nades: 2, fire: false, exit: null, father: null, wpn: null, beacon: null };
+const zMat = c => new T.MeshStandardMaterial({ color: c, roughness: 0.8 });
+// glowing red eyes (unlit, not tone-mapped so they pop in the dark)
+const zEyeMat = new T.MeshBasicMaterial({ color: 0xff1a0a, toneMapped: false }), zEyeGlow = new T.MeshBasicMaterial({ color: 0xff2010, transparent: true, opacity: 0.35, toneMapped: false, depthWrite: false });
+function zEyes(par, x, y, z, r = 0.02) { for (const sx of [-1, 1]) { const e = new T.Mesh(GEO.sph, zEyeMat); e.scale.setScalar(r); e.position.set(sx * x, y, z); par.add(e); const gl = new T.Mesh(GEO.sph, zEyeGlow); gl.scale.setScalar(r * 2.6); gl.position.copy(e.position); par.add(gl); } }
+function makeZ(kind) { const g = makeZ0(kind), h = g.userData.head; if (kind === 'krasue') zEyes(g, 0.042, 1.52, 0.105); else if (kind === 'headless') zEyes(g, 0.06, 1.25, 0.16, 0.025); else if (h) zEyes(h, 0.04, 0.165, 0.122, 0.017); return g; }
+function makeZ0(kind) {
+  let g;
+  if (kind === 'krasue') { g = new T.Group(); const h = new T.Mesh(GEO.head, zMat(0xd8c0a8)); h.scale.set(0.12, 0.14, 0.12); h.position.y = 1.5; g.add(h);
+    const hair = new T.Mesh(GEO.head, zMat(0x050505)); hair.scale.set(0.135, 0.16, 0.135); hair.position.set(0, 1.53, -0.02); g.add(hair);
+    const gm = new T.MeshStandardMaterial({ color: 0xa01818, emissive: 0xff3020, emissiveIntensity: 1.2 });
+    for (let i = 0; i < 4; i++) { const s = new T.Mesh(GEO.cyl, gm); s.scale.set(0.03, 0.5 + i * 0.1, 0.03); s.position.set((i - 1.5) * 0.04, 1.1 - i * 0.04, 0); g.add(s); }
+    const heart = new T.Mesh(GEO.sph, gm); heart.scale.setScalar(0.07); heart.position.y = 1.2; g.add(heart); g.userData = {}; return g; }
+  const o = { walker: { skin: 0x7a8a6a, shirt: 0x5a5040, pants: 0x2a2a30, eyes: 0xff2010, emissive: 0x101a08, ei: 0.3 },
+    runner: { skin: 0x8a9a7a, shirt: 0x8a2a2a, pants: 0x30303a, eyes: 0xff2010, hairStyle: 'buzz' },
+    pret: { skin: 0x5a4a5a, shirt: 0x5a4a5a, pants: 0x3a2a3a, sleeve: false, eyes: 0x000000, emissive: 0x1a101a, ei: 0.4, hairStyle: 'buzz' },
+    headless: { headless: true, shirt: 0xe6e2d8, pants: 0x2a2c34, skin: 0xa88a70 },
+    nangram: { skin: 0xece6dc, shirt: 0xd9a520, skirt: 0xa01818, hair: 0x050505, longHair: true, hairLen: 0.5, sleeve: false, eyes: 0x000000, emissive: 0x2a2a30, ei: 0.4 },
+    kuman: { skin: 0xd8a830, shirt: 0xd8a830, pants: 0xd8a830, emissive: 0x5a4008, ei: 0.6, hairStyle: 'buzz', eyes: 0x000000, shorts: true },
+    pop: { skin: 0x4a3a30, shirt: 0x2a2018, pants: 0x1a1410, eyes: 0xff4010, emissive: 0x200800, ei: 0.4, longHair: true, hairLen: 0.6 } }[kind];
+  g = person(o);
+  if (kind === 'pret') g.scale.set(0.75, 1.55, 0.75); if (kind === 'kuman') g.scale.setScalar(0.55); if (kind === 'pop') g.scale.setScalar(1.3); if (kind === 'runner') g.scale.setScalar(0.95);
+  if (kind === 'nangram') { const c = new T.Mesh(GEO.cone, new T.MeshStandardMaterial({ color: 0xe8b830, emissive: 0x5a4008 })); c.scale.set(0.09, 0.3, 0.09); c.position.y = 0.3; g.userData.head && g.userData.head.add(c); }
+  return g;
+}
+function zSpawn(kind, x, z) { const g = makeZ(kind), k = ZK[kind]; g.position.set(x, 0, z); scene.add(g);
+  Z.list.push({ g, kind, hp: k.hp * (1 + Z.t / 300), max: k.hp, sp: k.sp * (0.9 + Math.random() * 0.2), hitT: 0, ph: Math.random() * 6, dead: 0, flash: 0 }); }
+function zPickKind() { const t = Z.t, r = Math.random();
+  const pool = ['walker', 'walker', 'walker', 'runner']; if (t > 30) pool.push('krasue', 'kuman'); if (t > 60) pool.push('nangram', 'headless'); if (t > 100) pool.push('pret'); if (t > 150 && r < 0.3) pool.push('pop');
+  return pool[Math.random() * pool.length | 0]; }
+// ---------- family ----------
+function zMakeFamily() {
+  const P = player.pos, mk = (o, sc) => { const g = person(o); g.scale.setScalar(sc); scene.add(g); return g; };
+  Z.father = mk({ skin: 0xb88a62, shirt: 0x3a5a7a, pants: 0x2a2a30, hair: 0x101010, hairStyle: 'buzz', expr: 'angry' }, 1);
+  const mom = mk({ skin: 0xd0a07a, shirt: 0xc85a7a, skirt: 0x3a3040, hair: 0x101010, longHair: true, hairLen: 0.5 }, 0.95);
+  const baby = new T.Group(); { const b = new T.Mesh(GEO.sph, zMat(0xf0e8d8)); b.scale.set(0.13, 0.1, 0.2); baby.add(b); const h = new T.Mesh(GEO.sph, zMat(0xe0b090)); h.scale.setScalar(0.075); h.position.set(0, 0.06, 0.16); baby.add(h); }
+  baby.position.set(-0.08, 1.05, 0.2); baby.rotation.y = 0.5; mom.add(baby);
+  const pan = new T.Group(); { const iron = new T.MeshStandardMaterial({ color: 0x222224, metalness: 0.7, roughness: 0.4 }); const h = new T.Mesh(GEO.box, zMat(0x3a2414)); h.scale.set(0.03, 0.24, 0.03); h.position.y = -0.1; pan.add(h);
+    const d = new T.Mesh(new T.CylinderGeometry(0.15, 0.13, 0.04, 18), iron); d.rotation.x = Math.PI / 2; d.position.y = -0.36; pan.add(d); }
+  pan.position.set(0, -0.55, 0.04); mom.userData.armR.add(pan);
+  const son = mk({ skin: 0xc89870, shirt: 0xf4f4f0, pants: 0x1e2a5a, shorts: false, hair: 0x101010, expr: 'angry' }, 0.82);
+  const kat = new T.Group(); { const bl = new T.Mesh(GEO.box, new T.MeshStandardMaterial({ color: 0xe8ecf0, metalness: 0.9, roughness: 0.2 })); bl.scale.set(0.012, 0.75, 0.04); bl.position.y = -0.5; kat.add(bl);
+    const gd = new T.Mesh(GEO.box, new T.MeshStandardMaterial({ color: 0xc8a040, metalness: 0.7 })); gd.scale.set(0.06, 0.015, 0.07); gd.position.y = -0.11; kat.add(gd);
+    const hd = new T.Mesh(GEO.box, zMat(0x1a1a1a)); hd.scale.set(0.03, 0.2, 0.035); hd.position.y = 0.0; kat.add(hd); }
+  kat.position.set(0, -0.55, 0.04); son.userData.armR.add(kat);
+  Z.fam = [{ g: mom, name: 'แม่ (อุ้มเบบี๋)', hp: 100, max: 100, atk: { dmg: 30, reach: 1.7, rate: 1.0, kb: 6, style: 'bonk', snd: 900 } }, { g: son, name: 'ลูกชาย', hp: 80, max: 80, atk: { dmg: 45, reach: 2.3, rate: 0.75, kb: 7, style: 'slash', snd: 700 } }];
+  Z.fam.forEach((f, i) => f.g.position.set(P.x + (i ? 1.4 : -1.4), 0, P.z + 1.2));
+  Z.wpn = new T.Group(); Z.father.userData.armR.add(Z.wpn); zWpnMesh();
+}
+function zWpnMesh() { Z.wpn.clear(); const w = ZW.find(w => w.id === Z.owned[Z.wi]); const m = new T.Mesh(GEO.box, new T.MeshStandardMaterial({ color: w.col, metalness: w.type === 'melee' ? 0.4 : 0.6, roughness: 0.5 }));
+  if (w.type === 'melee') { m.scale.set(0.04, w.len, 0.06); m.position.set(0, -0.5 - w.len / 2, 0.05); } else { m.scale.set(0.06, 0.1, w.len); m.position.set(0, -0.5, w.len / 2 - 0.1); }
+  Z.wpn.add(m); }
+const zw = () => ZW.find(w => w.id === Z.owned[Z.wi]);
+// ---------- HUD + shop ----------
+const zhud = document.createElement('div'); zhud.style.cssText = 'position:fixed;left:16px;top:120px;z-index:6;background:rgba(10,10,12,.75);border:1px solid rgba(241,236,217,.2);border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.6;color:#f1ecd9;display:none;min-width:220px;pointer-events:none';
+document.body.appendChild(zhud);
+const zshop = document.createElement('div'); zshop.style.cssText = 'position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8)';
+zshop.innerHTML = '<div style="background:#16140f;border:1px solid #6a5a3a;border-radius:12px;padding:18px 22px;width:min(860px,96vw);max-height:90vh;overflow:auto;color:#f1ecd9"><h2 style="margin:0 0 4px">ร้านอาวุธลุงเปี๊ยก</h2><p id="zsMoney" style="margin:0 0 6px;color:#ffd040;font-size:24px;font-weight:800"></p><p style="margin:0 0 12px;color:#b8b2a0;font-size:13px;line-height:1.6">วิธีซื้อ: <b>คลิกที่อาวุธ</b> ถ้าเงินพอจะซื้อแล้วถือทันที (ปุ่มจาง = เงินยังไม่พอ)<br>อาวุธที่มีแล้วคลิกเพื่อหยิบมาถือ · ระหว่างสู้กด <kbd>1</kbd>–<kbd>9</kbd> หรือ <kbd>Q</kbd> สลับอาวุธ · <kbd>G</kbd> ขว้างระเบิด</p><div id="zsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px"></div><div style="margin-top:14px;text-align:right"><button id="zsClose">กลับไปสู้ (B)</button></div></div>';
+document.body.appendChild(zshop);
+function zShopOpen() { if (!Z.on) return; zshop.style.display = 'flex'; game.playing = false; if (document.pointerLockElement) document.exitPointerLock(); zShopDraw(); }
+function zShopClose() { zshop.style.display = 'none'; engage(); }
+// side-view icons (viewBox 120x44) for the shop cards
+const ZICON = {
+  stick: '<rect x="8" y="19" width="104" height="7" rx="3" fill="#8a5a2a"/><rect x="30" y="19" width="3" height="7" fill="#6a4020"/><rect x="70" y="19" width="3" height="7" fill="#6a4020"/>',
+  knife: '<path d="M14 24 L70 16 L84 20 L84 26 Z" fill="#cfd4d8"/><rect x="84" y="18" width="26" height="9" rx="3" fill="#5a3a1a"/>',
+  axe: '<rect x="14" y="20" width="96" height="6" rx="3" fill="#8a5a2a"/><path d="M90 8 L108 6 Q114 22 108 38 L90 34 Z" fill="#8a8a92"/>',
+  katana: '<path d="M6 25 Q50 14 86 19 L86 23 Q50 19 8 27 Z" fill="#eef2f4"/><rect x="84" y="15" width="5" height="13" rx="2" fill="#c8a040"/><rect x="89" y="18" width="26" height="6" rx="2" fill="#1a1a1a"/><path d="M92 18 l4 6 l4 -6 l4 6 l4 -6 l4 6" stroke="#e8e0d0" stroke-width="1" fill="none"/>',
+  pistol: '<rect x="30" y="12" width="56" height="11" rx="2" fill="#2a2a2e"/><path d="M62 22 L80 22 L86 40 L70 40 Z" fill="#1a1a1c"/><path d="M56 23 q2 9 10 8" stroke="#2a2a2e" stroke-width="3" fill="none"/>',
+  uzi: '<rect x="26" y="12" width="60" height="13" rx="2" fill="#2a2a2e"/><rect x="14" y="16" width="14" height="5" fill="#1a1a1a"/><rect x="58" y="24" width="9" height="18" fill="#1a1a1c"/><rect x="86" y="14" width="22" height="4" fill="#1a1a1a"/>',
+  shotgun: '<rect x="4" y="14" width="74" height="5" fill="#2a2a2e"/><rect x="8" y="20" width="60" height="4" fill="#2a2a2e"/><rect x="22" y="19" width="26" height="8" rx="2" fill="#8a4a1e"/><rect x="66" y="13" width="16" height="12" fill="#2a2a2e"/><path d="M80 15 L116 22 L116 32 L80 25 Z" fill="#8a4a1e"/>',
+  ak: '<rect x="2" y="15" width="40" height="3" fill="#1a1a1a"/><rect x="28" y="17" width="20" height="8" rx="2" fill="#8a4a1e"/><rect x="46" y="13" width="34" height="11" fill="#2a2a2e"/><path d="M58 24 Q60 38 70 42 L76 38 Q68 32 66 24 Z" fill="#3a2a1a"/><path d="M80 15 L116 20 L116 30 L80 23 Z" fill="#8a4a1e"/>',
+  sniper: '<rect x="2" y="18" width="66" height="3" fill="#1a1a1a"/><rect x="40" y="6" width="34" height="7" rx="3" fill="#1a1a1a"/><rect x="62" y="15" width="22" height="10" fill="#2a3a2a"/><path d="M84 16 L118 20 L118 32 L84 26 Z" fill="#3a4a3a"/><path d="M50 21 l-6 14 M50 21 l6 14" stroke="#1a1a1a" stroke-width="2"/>',
+  mg: '<rect x="2" y="16" width="44" height="5" fill="#1a1a1a"/><rect x="44" y="11" width="44" height="14" fill="#2a2a2e"/><rect x="56" y="25" width="16" height="12" fill="#4a5236"/><path d="M88 13 L118 18 L118 30 L88 24 Z" fill="#2a2a2e"/><path d="M20 21 l-8 16 M20 21 l8 16" stroke="#1a1a1a" stroke-width="2"/>',
+  flame: '<rect x="70" y="8" width="22" height="30" rx="8" fill="#a02020"/><rect x="18" y="18" width="56" height="7" fill="#3a3a3e"/><path d="M18 21 L2 14 Q-2 21 2 28 Z" fill="#ff8a20"/><rect x="40" y="25" width="7" height="12" fill="#1a1a1c"/>',
+  rpg: '<path d="M2 22 L16 16 L34 14 Q44 22 34 30 L16 28 Z" fill="#4a5236"/><rect x="34" y="18" width="60" height="8" fill="#2a2c2e"/><rect x="52" y="17" width="22" height="10" fill="#7a3a1c"/><path d="M94 18 L114 12 L114 32 L94 26 Z" fill="#2a2c2e"/><rect x="56" y="26" width="6" height="12" fill="#7a3a1c"/><rect x="44" y="8" width="14" height="7" rx="2" fill="#1a1a1a"/>',
+  nade: '<ellipse cx="60" cy="26" rx="13" ry="15" fill="#3a4a2a"/><rect x="54" y="6" width="12" height="7" fill="#6a6a6a"/><path d="M66 9 q12 -2 12 10" stroke="#8a8a8a" stroke-width="2" fill="none"/><path d="M48 22 h24 M48 30 h24" stroke="#2a3a1a" stroke-width="2"/>',
+  med: '<rect x="38" y="8" width="44" height="32" rx="5" fill="#e8e4dc"/><rect x="55" y="13" width="10" height="22" fill="#d02020"/><rect x="49" y="19" width="22" height="10" fill="#d02020"/>',
+};
+function zShopDraw() { document.getElementById('zsMoney').textContent = 'เงิน: ฿' + Z.money; const L = document.getElementById('zsList'); L.innerHTML = '';
+  // state: 'buy' green (enough money), 'poor' red (not enough, disabled), 'own' grey (already bought: can't buy again, click to hold)
+  const card = (icon, label, info, price, state, fn) => { const b = document.createElement('button');
+    const c = { buy: ['#123a1a', '#40d060', '#80ff90'], poor: ['#3a1212', '#c03030', '#ff6a5a'], own: ['#24242a', '#6a6a72', '#b8b8c0'] }[state];
+    b.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:left;font-size:14px;padding:8px 10px;background:' + c[0] + ';border:2px solid ' + c[1] + ';color:#f1ecd9;' + (state === 'poor' ? 'cursor:not-allowed;opacity:.85' : '');
+    b.innerHTML = '<svg viewBox="0 0 120 44" style="width:100%;height:54px;background:rgba(255,255,255,.06);border-radius:6px">' + icon + '</svg><b>' + label + '</b><small style="color:#c8c2b0">' + info + '</small><b style="font-size:16px;color:' + c[2] + '">' + price + '</b>';
+    b.disabled = state === 'poor'; b.onclick = () => { if (state !== 'poor') { fn(); zShopDraw(); } }; L.appendChild(b); };
+  for (const w of ZW) { const own = Z.owned.includes(w.id), held = own && Z.owned[Z.wi] === w.id;
+    const info = 'ดาเมจ ' + w.dmg + (w.pellets ? '×' + w.pellets : '') + (w.mag ? ' · แม็ก ' + w.mag : ' · ระยะประชิด');
+    if (own) card(ZICON[w.id], w.name, info, held ? '✔ กำลังถืออยู่' : 'ซื้อแล้ว · คลิกเพื่อถือ', 'own', () => { Z.wi = Z.owned.indexOf(w.id); zWpnMesh(); });
+    else card(ZICON[w.id], w.name, info, '฿' + w.price + (Z.money >= w.price ? ' · กดซื้อ' : ' · เงินไม่พอ'), Z.money >= w.price ? 'buy' : 'poor', () => { Z.money -= w.price; Z.owned.push(w.id); Z.ammo[w.id] = w.mag; Z.wi = Z.owned.indexOf(w.id); zWpnMesh(); }); }
+  card(ZICON.nade, 'ระเบิดมือ ×3', 'มีอยู่ ' + Z.nades + ' ลูก · กด G ขว้าง', '฿120', Z.money >= 120 ? 'buy' : 'poor', () => { Z.money -= 120; Z.nades += 3; });
+  card(ZICON.med, 'ชุดปฐมพยาบาล', 'เติมเลือดเต็ม พ่อ แม่ ลูก', '฿100', Z.money >= 100 ? 'buy' : 'poor', () => { Z.money -= 100; player.hp = 100; updHP(); Z.fam.forEach(f => f.hp = f.max); }); }
+document.getElementById('zsClose').onclick = zShopClose;
+const zMoneyEl = document.createElement('div'); zMoneyEl.style.cssText = 'position:fixed;right:16px;top:240px;z-index:6;text-align:right;pointer-events:none;display:none;font-family:inherit';
+zMoneyEl.innerHTML = '<div style="font-size:13px;color:#e8d8a0;letter-spacing:.05em">เงินที่มี</div><div id="zmVal" style="font-size:46px;font-weight:900;color:#ffd040;text-shadow:0 0 14px rgba(255,190,40,.7),0 2px 0 #6a4a00,0 0 3px #000;line-height:1.05">฿0</div><div id="zmPop" style="font-size:22px;font-weight:800;color:#80ff90;text-shadow:0 0 6px #000;height:26px;opacity:0;transition:opacity .25s,transform .25s"></div><div id="zmHint" style="margin-top:6px;display:inline-block;background:rgba(10,10,12,.8);border:1px solid #c8a040;border-radius:8px;padding:6px 10px;font-size:14px;color:#f1ecd9"></div>';
+document.body.appendChild(zMoneyEl);
+function zMoneyPop(v) { const p = document.getElementById('zmPop'); p.textContent = '+฿' + v; p.style.opacity = 1; p.style.transform = 'translateY(-6px)'; clearTimeout(zMoneyPop.h); zMoneyPop.h = setTimeout(() => { p.style.opacity = 0; p.style.transform = ''; }, 900); }
+function zMoneyHud() { document.getElementById('zmVal').textContent = '฿' + Z.money; const next = ZW.filter(w => !Z.owned.includes(w.id)).sort((a, b) => a.price - b.price)[0], can = next && Z.money >= next.price, h = document.getElementById('zmHint');
+  h.innerHTML = can ? '<b style="color:#80ff90">ซื้ออาวุธใหม่ได้แล้ว!</b><br>กด <kbd>B</kbd> เปิดร้าน → คลิกอาวุธที่ต้องการ' : next ? 'เก็บเหรียญทองที่ซอมบี้ดรอป<br>ครบ ฿' + next.price + ' ซื้อ <b>' + next.name + '</b> ได้ · กด <kbd>B</kbd> เปิดร้าน' : 'ซื้ออาวุธครบแล้ว! กด <kbd>B</kbd> ซื้อระเบิด/ยา';
+  h.style.borderColor = can ? '#80ff90' : '#c8a040'; h.style.boxShadow = can && Math.sin(Z.t * 6) > 0 ? '0 0 14px #80ff90' : 'none'; }
+function zHud() { zMoneyHud(); const w = zw(), am = w.mag ? (Z.reloadT > 0 ? 'รีโหลด…' : `${Z.ammo[w.id]}/${w.mag}`) : '—', d = Math.hypot(Z.exit.x - player.pos.x, Z.exit.z - player.pos.z) | 0;
+  zhud.innerHTML = `ฆ่าแล้ว ${Z.kills} ตัว<br>อาวุธ: <b>${w.name}</b> ${am} · ระเบิด ${Z.nades}<br>พ่อ ${Math.ceil(player.hp)} · ${Z.fam.map(f => `${f.name} ${Math.max(0, Math.ceil(f.hp))}`).join(' · ')}<br>ทางออกหมู่บ้าน: <b>${d} ม.</b> (ลำแสงเขียว)<br><small style="color:#b8b2a0">คลิกโจมตี · 1-9/Q เปลี่ยนอาวุธ · R รีโหลด · G ระเบิด · B ร้านค้า</small>`; }
+// ---------- start ----------
+function zStart() {
+  startFree(); clearAnom(); game.mode = 'zombie'; Z.on = true;
+  for (const z of Z.list) scene.remove(z.g); for (const c of Z.coins) scene.remove(c.m); Z.list = []; Z.coins = [];
+  if (Z.father) { scene.remove(Z.father); Z.fam.forEach(f => scene.remove(f.g)); }
+  Object.assign(Z, { money: 0, kills: 0, t: 0, spawnT: 0, owned: ['stick'], wi: 0, ammo: {}, reloadT: 0, cd: 0, nades: 2 });
+  const s = W([640, 420]); player.pos.set(s[0], 0, s[1]); player.yaw = 0; player.hp = 100; updHP(); env.time = 19.6;
+  const e = W([800, 225]); Z.exit = { x: e[0], z: e[1] };
+  if (!Z.beacon) { Z.beacon = new T.Mesh(new T.CylinderGeometry(1.6, 1.6, 60, 16, 1, true), new T.MeshBasicMaterial({ color: 0x40ff80, transparent: true, opacity: 0.25, side: T.DoubleSide, depthWrite: false })); Z.beacon.userData.fx = 1; scene.add(Z.beacon); }
+  Z.beacon.position.set(Z.exit.x, 30, Z.exit.z); Z.beacon.visible = true;
+  if (!Z.lamp) { Z.lamp = new T.PointLight(0xffc880, 14, 16, 1.6); scene.add(Z.lamp); } Z.lamp.visible = true;
+  zMakeFamily(); document.getElementById('bar').style.display = 'none'; zhud.style.display = 'block'; zMoneyEl.style.display = 'block'; hands.visible = false;
+  ui.obj.innerHTML = '<b>หนีออกจากหมู่บ้าน!</b><br>พาแม่ เบบี๋ และลูกชายไปที่ลำแสงสีเขียวทางเข้าหมู่บ้าน · ทุกคนต้องรอด'; ui.score.textContent = '';
+}
+// ---------- combat ----------
+const zRay = new T.Raycaster();
+function zSlashFx() { const F = Z.father, m = new T.Mesh(new T.RingGeometry(0.9, 1.9, 32, 1, -0.15, Math.PI + 0.3), new T.MeshBasicMaterial({ color: 0xf4f0e8, transparent: true, opacity: 0.55, side: T.DoubleSide, depthWrite: false })); m.userData.fx = 1;
+  m.position.copy(F.position).setY(1.25); m.rotation.order = 'YXZ'; m.rotation.set(0, F.rotation.y, 0); m.rotateX(Math.PI / 2); m.rotateY(0.45); // ring +y -> forward: a half-circle in front, tilted so it runs high on the weapon side, low on the other scene.add(m); // tilted arc: high right -> low left
+  let t = 0; const f = () => { t += 1 / 60; m.material.opacity = 0.55 * (1 - t / 0.18); if (t < 0.18) requestAnimationFrame(f); else { scene.remove(m); m.geometry.dispose(); } }; f(); }
+const zMuzzle = new T.PointLight(0xffc060, 0, 10, 2); scene.add(zMuzzle);
+function zGunFx(from, to) { const fl = new T.Mesh(fxGeo, new T.MeshBasicMaterial({ color: 0xffe080, transparent: true, toneMapped: false })); fl.userData.fx = 1; fl.position.copy(from); fl.scale.setScalar(0.14 + Math.random() * 0.08); scene.add(fl);
+  zMuzzle.position.copy(from); zMuzzle.intensity = 18;
+  const ln = new T.Line(new T.BufferGeometry().setFromPoints([from, to]), new T.LineBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.9 })); ln.userData.fx = 1; scene.add(ln);
+  let t = 0; const f = () => { t += 1 / 60; fl.material.opacity = ln.material.opacity = 1 - t / 0.07; zMuzzle.intensity = 18 * (1 - t / 0.07); if (t < 0.07) requestAnimationFrame(f); else { scene.remove(fl, ln); ln.geometry.dispose(); zMuzzle.intensity = 0; } }; f(); }
+function zMine(o) { for (; o; o = o.parent) if (o === Z.father || Z.fam.some(f => f.g === o)) return true; return false; }
+const zToastEl = document.createElement('div'); zToastEl.style.cssText = 'position:fixed;left:50%;top:40%;transform:translateX(-50%);z-index:7;font-size:28px;font-weight:800;color:#ff3a2a;text-shadow:0 0 8px #000;pointer-events:none;opacity:0;transition:opacity .2s'; document.body.appendChild(zToastEl);
+function toast(t) { zToastEl.textContent = t; zToastEl.style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => zToastEl.style.opacity = 0, 600); }
+function zTip() { const m = Z.wpn.children[0]; return m ? m.localToWorld(new T.Vector3(0, 0, 0.5)) : player.pos.clone().setY(1.4); }
+function zHit(z, dmg, dir, kb, noKill) { if (z.dead) return; z.hp -= dmg; if (noKill) z.hp = Math.max(1, z.hp); z.flash = 0.12; if (dir && !kb) { z.g.position.x += dir.x * 0.25; z.g.position.z += dir.z * 0.25; }
+  if (dir && kb) { const heavy = z.kind === 'pop' || z.kind === 'pret' ? 0.4 : 1; z.kv = { x: dir.x * kb * heavy, z: dir.z * kb * heavy }; if (heavy === 1 && !ZK[z.kind].fly) { z.down = 1.4; z.fallDir = -1; } }
+  burst(z.g.position.clone().setY(1.2 * z.g.scale.y), z.kind === 'kuman' ? 0xe8c040 : 0x5a0a0a, 6);
+  if (z.hp <= 0) { z.dead = 1; Z.kills++; noiseHit(0.2, { f: 180, q: 0.6, vol: 0.12 }); zDrop(z.g.position, ZK[z.kind].cash); } }
+// coins stay where they drop: spinning gold coin + light pillar so you can spot them in the dark; walk over to collect
+const coinGeo = new T.CylinderGeometry(0.2, 0.2, 0.05, 18), coinMat = new T.MeshStandardMaterial({ color: 0xffd040, emissive: 0xb08000, emissiveIntensity: 1.2, metalness: 0.8, roughness: 0.3 }),
+  beamGeo = new T.CylinderGeometry(0.22, 0.4, 3, 12, 1, true), beamMat = new T.MeshBasicMaterial({ color: 0xffd860, transparent: true, opacity: 0.35, side: T.DoubleSide, depthWrite: false, toneMapped: false }),
+  haloGeo = new T.RingGeometry(0.3, 0.6, 24), haloMat = new T.MeshBasicMaterial({ color: 0xffe080, transparent: true, opacity: 0.5, side: T.DoubleSide, depthWrite: false, toneMapped: false });
+function zDrop(p, v) { const g = new T.Group(); g.position.set(p.x + (Math.random() - 0.5) * 0.6, 0, p.z + (Math.random() - 0.5) * 0.6); g.userData.fx = 1;
+  const c = new T.Mesh(coinGeo, coinMat); c.rotation.x = Math.PI / 2; c.position.y = 0.45; c.userData.fx = 1; g.add(c);
+  const b = new T.Mesh(beamGeo, beamMat); b.position.y = 1.5; b.userData.fx = 1; g.add(b); const h = new T.Mesh(haloGeo, haloMat); h.rotation.x = -Math.PI / 2; h.position.y = 0.03; h.userData.fx = 1; g.add(h);
+  scene.add(g); Z.coins.push({ m: g, coin: c, v: Math.round(v * (1 + Math.random() * 0.5)), life: 60 }); }
+function zBlast(p, r, dmg) { burst(p, 0xff8a20, 30); burst(p, 0xffe060, 20); burst(p, 0x3a3a3a, 16); noiseHit(1.2, { f: 90, q: 0.4, vol: 0.45 }); player.shake = 0.5;
+  for (const z of Z.list) { const d = Math.hypot(z.g.position.x - p.x, z.g.position.z - p.z); if (d < r) zHit(z, dmg * (1 - d / r * 0.6)); }
+  const pd = Math.hypot(player.pos.x - p.x, player.pos.z - p.z); if (pd < r * 0.6) hurt(30 * (1 - pd / (r * 0.6)) + 5, 'โดนระเบิดตัวเอง'); }
+function zAttack() { const w = zw(); if (Z.cd > 0 || Z.reloadT > 0 || !game.playing) return;
+  const fw = camera.getWorldDirection(new T.Vector3()), flat = new T.Vector3(fw.x, 0, fw.z).normalize(), P = player.pos;
+  if (w.type === 'melee') { Z.cd = Math.max(w.cd, 0.36); Z.swing = 0.34; setTimeout(zSlashFx, 100); setTimeout(() => noiseHit(0.12, { f: 700, q: 0.8, vol: 0.08 }), 110);
+    setTimeout(() => { let any = false; for (const z of Z.list) { if (z.dead) continue; const dx = z.g.position.x - P.x, dz = z.g.position.z - P.z, d = Math.hypot(dx, dz) || 1;
+      if (d < w.range && (dx * flat.x + dz * flat.z) / d > (w.arc || 0.3)) { any = true; zHit(z, w.dmg, new T.Vector3(dx / d, 0, dz / d), 7); } } if (any) noiseHit(0.15, { f: 160, q: 0.6, vol: 0.2 }); }, 150); return; }
+  if (Z.ammo[w.id] === undefined) Z.ammo[w.id] = w.mag; if (Z.ammo[w.id] <= 0) { zReload(); return; }
+  Z.ammo[w.id]--; Z.cd = w.cd; if (Z.ammo[w.id] <= 0) setTimeout(zReload, 200);
+  if (w.type === 'rpg') { noiseHit(0.5, { f: 400, q: 0.4, vol: 0.25 }); const m = new T.Mesh(new T.ConeGeometry(0.07, 0.35, 8), new T.MeshBasicMaterial({ color: 0x4a5236 })); m.userData.fx = 1; m.position.copy(P).setY(1.5).addScaledVector(fw, 0.8); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), fw); scene.add(m); Z.rockets = (Z.rockets || []).concat({ m, dir: fw.clone(), life: 3 }); return; }
+  if (w.type === 'flame') { const hit = new T.Vector3(); for (let i = 0; i < 2; i++) burst(hit.copy(P).setY(1.3).addScaledVector(flat, 1 + Math.random() * w.range), Math.random() < 0.5 ? 0xff6a10 : 0xffc020, 2);
+    for (const z of Z.list) { if (z.dead) continue; const dx = z.g.position.x - P.x, dz = z.g.position.z - P.z, d = Math.hypot(dx, dz) || 1; if (d < w.range && (dx * flat.x + dz * flat.z) / d > 0.8) zHit(z, w.dmg); } if (Math.random() < 0.3) noiseHit(0.1, { f: 500, q: 0.4, vol: 0.05 }); return; }
+  noiseHit(w.id === 'sniper' ? 0.4 : 0.12, { f: w.id === 'pistol' ? 900 : 300, q: 0.6, vol: w.id === 'mg' || w.id === 'sniper' ? 0.25 : 0.15 });
+  const groups = Z.list.filter(z => !z.dead).map(z => z.g), shotHits = new Map();
+  for (let k = 0; k < (w.pellets || 1); k++) { const d = fw.clone(); const s = w.spread || 0.01; d.x += (Math.random() - 0.5) * s * 2; d.y += (Math.random() - 0.5) * s * 2; d.z += (Math.random() - 0.5) * s * 2; d.normalize();
+    zRay.set(camera.position, d); zRay.far = 80; zRay.camera = camera; const hits = zRay.intersectObjects(groups, true); const done = new Set();
+    let end = null;
+    for (const h of hits) { let o = h.object, head = false; while (o && !groups.includes(o)) { if (o === o.parent?.userData?.head || (o.parent && o.parent.userData && o.parent.userData.head === o)) head = true; o = o.parent; } const z = Z.list.find(z => z.g === o); if (!z || done.has(z)) continue; done.add(z);
+      if (z.kind === 'krasue' || (z.kind === 'headless' && h.point.y > 1.1 * z.g.scale.y)) head = true; end = end || h.point;
+      burst(h.point, 0x8a0000, head ? 22 : 9); if (head) burst(h.point, 0x3a0000, 10);
+      const pr = shotHits.get(z) || { head: false, pt: h.point }; pr.head = pr.head || head; shotHits.set(z, pr); if (!w.pierce) break; }
+    if (!end) { zRay.far = 60; const wh = zRay.intersectObjects(scene.children, true).find(h => h.object.visible && !h.object.isSprite && h.object !== sky && !h.object.userData.fx && h.object.material && !h.object.material.transparent && !zMine(h.object)); end = wh ? wh.point : camera.position.clone().addScaledVector(d, 60); if (wh) { burst(wh.point, 0xb8a888, 5); burst(wh.point, 0xffd080, 3); } }
+    if (k < 3) zGunFx(zTip(), end); }
+  for (const [z, pr] of shotHits) { if (pr.head) { zHit(z, 1e6, flat); toast('เฮดช็อต!'); } else { z.bodyHits = (z.bodyHits || 0) + 1; if (z.bodyHits % 3 === 0) zHit(z, w.dmg * (w.pellets ? 1 : 1), flat, 3, true); else zHit(z, w.dmg, flat, 0, true); } }
+}
+function zReload() { const w = zw(); if (!w.mag || Z.reloadT > 0 || Z.ammo[w.id] >= w.mag) return; Z.reloadT = w.reload; noiseHit(0.08, { f: 1200, q: 2, vol: 0.06 }); }
+function zNade() { if (Z.nades <= 0 || !game.playing) return; Z.nades--; const fw = camera.getWorldDirection(new T.Vector3()), m = new T.Mesh(GEO.sph, new T.MeshStandardMaterial({ color: 0x3a4a2a })); m.userData.fx = 1; m.scale.setScalar(0.09);
+  m.position.copy(player.pos).setY(1.6); scene.add(m); Z.grenades = (Z.grenades || []).concat({ m, v: new T.Vector3(fw.x * 13, 5 + fw.y * 8, fw.z * 13), t: 1.6 }); }
+addEventListener('mousedown', e => { if (e.button === 0) Z.fire = true; }); addEventListener('mouseup', e => { if (e.button === 0) Z.fire = false; });
+addEventListener('keydown', e => { if (e.code === 'KeyB' && Z.on && game.mode === 'zombie') { zshop.style.display === 'flex' ? zShopClose() : zShopOpen(); return; }
+  if (!Z.on || game.mode !== 'zombie' || !game.playing) return; const n = parseInt(e.key); if (n >= 1 && n <= Z.owned.length) { Z.wi = n - 1; zWpnMesh(); }
+  if (e.code === 'KeyQ') { Z.wi = (Z.wi + 1) % Z.owned.length; zWpnMesh(); } if (e.code === 'KeyR') zReload(); if (e.code === 'KeyG') zNade(); });
+// ---------- per-frame ----------
+// smooth shortest-way turn toward angle a
+function turnTo(g, a, dt, rate = 8) { let d = a - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); g.rotation.y += d * Math.min(1, dt * rate); }
+// stride-synced gait: leg phase advances with distance actually walked (no foot sliding), eases in/out, leans forward when running.
+// walkPose writes body.rotation.y (hip sway) - give it a scratch body so it never overwrites the character's facing.
+const _gb = { position: {}, rotation: {} };
+function zGait(g, st, moved, dt, run) { g.rotation.order = 'YXZ'; const amt = st.amt = lerp(st.amt || 0, moved > 0.001 ? 1 : 0, Math.min(1, dt * 8));
+  st.ph = (st.ph || 0) + moved / (run ? 1.15 : 0.7) * Math.PI; const u = g.userData; walkPose(u, _gb, st.ph, amt * (run ? 1.35 : 1));
+  g.position.y = _gb.position.y * (run ? 2 : 1); g.rotation.x = amt * (run ? 0.14 : 0.035); g.rotation.z = (_gb.rotation.y || 0) * 0.3; }
+function zUpdate(dt) { if (!Z.on) return; const P = player.pos;
+  for (const v of villagers) v.g.visible = false; // everyone else has fled or turned
+  // third-person camera over the right shoulder
+  const sy = Math.sin(player.yaw), cy = Math.cos(player.yaw); camera.position.set(P.x + sy * 3.6 + cy * 0.7, P.y + 2.3 - player.pitch * 1.5, P.z + cy * 3.6 - sy * 0.7);
+  Z.lamp.position.set(P.x, 2.6, P.z); const F = Z.father, u = F.userData, lp = Z.lastP || (Z.lastP = P.clone()), mdx = P.x - lp.x, mdz = P.z - lp.z, moved = Math.min(0.5, Math.hypot(mdx, mdz)); lp.copy(P);
+  // face where you aim while fighting / holding a gun, otherwise face the way you walk
+  const aiming = Z.fire || Z.cd > -0.8 || zw().type !== 'melee'; if (aiming) turnTo(F, player.yaw + Math.PI, dt, 14); else if (moved > 0.002) turnTo(F, Math.atan2(mdx, mdz), dt, 10);
+  F.position.set(P.x, 0, P.z); zGait(F, Z, moved, dt, player.running); F.position.y += P.y;
+  if (zw().type !== 'melee') { u.armR.rotation.set(-1.5 - player.pitch, 0, 0); if (zw().len > 0.5) u.armL.rotation.set(-1.4 - player.pitch, 0, 0.5); }
+  const a = u.armR; a.rotation.order = 'YXZ';
+  if (Z.swing > 0) { Z.swing -= dt; const k = 1 - Math.max(0, Z.swing) / 0.34, wind = k < 0.35, q = wind ? k / 0.35 : sstep(0, 1, (k - 0.35) / 0.5);
+    if (wind) { a.rotation.set(-1.4 - q * 1.4, 0.2 + q * 0.7, 0); u.torso.rotation.y = q * 0.4; } else { a.rotation.set(-2.8 + q * 2.2, 0.9 - q * 2.0, 0); u.torso.rotation.y = 0.4 - q * 0.95; }
+    a.userData.j.rotation.x = -0.15; } else a.rotation.y = 0;
+  if (!game.playing) return; Z.t += dt; Z.cd -= dt;
+  if (Z.reloadT > 0) { Z.reloadT -= dt; if (Z.reloadT <= 0) Z.ammo[zw().id] = zw().mag; }
+  if (Z.fire && (zw().auto || zw().type === 'melee' ? true : !Z._held)) zAttack(); Z._held = Z.fire;
+  // family follows in a chain behind the father, running when far
+  Z.fam.forEach((f, fi) => { const side = fi ? 1.4 : -1.4, lead = { x: P.x + cy * side + sy * 1.2, z: P.z - sy * side + cy * 1.2 }; // beside-behind the father, out of the camera line
+    const g = f.g, dx = lead.x - g.position.x, dz = lead.z - g.position.z, d = Math.hypot(dx, dz) || 0.001;
+    const want = d > 6 ? 8.5 : d > 1.5 ? 4.5 : d > 0.35 ? d * 3 : 0; f.v = lerp(f.v || 0, want, Math.min(1, dt * 5)); const ox = g.position.x, oz = g.position.z;
+    if (f.v > 0.05) { g.position.x += dx / d * Math.min(f.v * dt, d); g.position.z += dz / d * Math.min(f.v * dt, d); collide(g.position); }
+    const fm = Math.hypot(g.position.x - ox, g.position.z - oz); if (fm > 0.004) turnTo(g, Math.atan2(g.position.x - ox, g.position.z - oz), dt, 8); else turnTo(g, F.rotation.y, dt, 3);
+    if (d > 30) { g.position.set(lead.x - dx / d, 0, lead.z - dz / d); } // never lose them behind a wall
+    zGait(g, f, fm, dt, f.v > 6); const fu = g.userData, A = f.atk; if (f === Z.fam[0]) fu.armL.rotation.set(-1.2, 0, 0.7); fu.armR.rotation.order = 'YXZ';
+    f.cd = (f.cd || 0) - dt; let tz = null, td = A.reach; for (const z of Z.list) { if (z.dead || z.down > 0) continue; const d = Math.hypot(z.g.position.x - g.position.x, z.g.position.z - g.position.z); if (d < td) { td = d; tz = z; } }
+    if (tz) turnTo(g, Math.atan2(tz.g.position.x - g.position.x, tz.g.position.z - g.position.z), dt, 14);
+    if (tz && f.cd <= 0) { f.cd = A.rate; f.swing = 0.34; const zz = tz; setTimeout(() => { if (zz.dead) return; const dx = zz.g.position.x - g.position.x, dz = zz.g.position.z - g.position.z, d = Math.hypot(dx, dz) || 1; if (d < A.reach + 0.6) { zHit(zz, A.dmg, new T.Vector3(dx / d, 0, dz / d), A.kb); noiseHit(0.15, { f: A.style === 'bonk' ? 1400 : 160, q: A.style === 'bonk' ? 6 : 0.6, vol: 0.2 }); } }, 150); noiseHit(0.1, { f: A.snd, q: 0.8, vol: 0.06 }); }
+    if (f.swing > 0) { f.swing -= dt; const k = 1 - Math.max(0, f.swing) / 0.34, wind = k < 0.35, q = wind ? k / 0.35 : sstep(0, 1, (k - 0.35) / 0.5);
+      if (A.style === 'bonk') fu.armR.rotation.set(wind ? -1.2 - q * 1.8 : -3.0 + q * 2.3, 0, 0); // straight overhead smash
+      else { if (wind) fu.armR.rotation.set(-1.4 - q * 1.4, 0.2 + q * 0.7, 0); else fu.armR.rotation.set(-2.8 + q * 2.2, 0.9 - q * 2.0, 0); }
+    } else { fu.armR.rotation.y = 0; if (A.style === 'slash') fu.armR.rotation.x = Math.min(fu.armR.rotation.x, -0.5); } });
+  // spawn: more and tougher over time, 28-50m away
+  const alive = Z.list.filter(z => !z.dead).length; Z.spawnT -= dt;
+  if (Z.spawnT <= 0 && alive < 10 + Z.t / 12) { Z.spawnT = Math.max(0.6, 2.5 - Z.t / 90); const a = Math.random() * 6.283, r = 28 + Math.random() * 22; zSpawn(zPickKind(), clamp(P.x + Math.cos(a) * r, BOUND.x0, BOUND.x1), clamp(P.z + Math.sin(a) * r, BOUND.z0, BOUND.z1)); }
+  const targets = [{ p: P, f: null }].concat(Z.fam.map(f => ({ p: f.g.position, f })));
+  for (let i = Z.list.length - 1; i >= 0; i--) { const z = Z.list[i], g = z.g, k = ZK[z.kind];
+    if (z.kv) { g.position.x += z.kv.x * dt; g.position.z += z.kv.z * dt; const f = Math.pow(0.03, dt); z.kv.x *= f; z.kv.z *= f; if (!k.fly) collide(g.position); if (Math.hypot(z.kv.x, z.kv.z) < 0.2) z.kv = null; }
+    if (z.dead) { z.dead += dt; g.rotation.order = 'YXZ'; g.rotation.x = Math.min(1.5, z.dead * 6) * (z.fallDir || 1); g.position.y = k.fly ? Math.max(0, 1 - z.dead * 3) : 0; if (z.dead > 2.5) { scene.remove(g); Z.list.splice(i, 1); } continue; }
+    if (z.down > 0) { z.down -= dt; const t = z.down; g.rotation.order = 'YXZ'; g.position.y = 0; g.rotation.z = 0; g.rotation.x = t > 0.55 ? -Math.min(1.45, (1.4 - t) * 9) : -1.45 * sstep(0, 0.55, t); continue; }
+    let best = targets[0], bd = 1e9; for (const t of targets) { const d = Math.hypot(t.p.x - g.position.x, t.p.z - g.position.z); if (d < bd) { bd = d; best = t; } }
+    if (bd > 120) { scene.remove(g); Z.list.splice(i, 1); continue; } // too far behind: recycle
+    const dx = best.p.x - g.position.x, dz = best.p.z - g.position.z;
+    const zx = g.position.x, zz = g.position.z; if (bd > 1.0) { g.position.x += dx / bd * z.sp * dt; g.position.z += dz / bd * z.sp * dt; if (!k.fly) collide(g.position); }
+    const zm = Math.hypot(g.position.x - zx, g.position.z - zz); turnTo(g, Math.atan2(dx, dz), dt, z.sp > 4 ? 7 : 4); z.ph += dt * z.sp * 2.5;
+    if (z.kind === 'krasue') g.position.y = Math.sin(Z.t * 3 + z.ph) * 0.2; else if (g.userData.armL) { const gy = z.gp || 0; zGait(g, z.gs || (z.gs = {}), zm, dt, z.sp > 4); g.userData.armL.rotation.x = g.userData.armR.rotation.x = -1.4 + Math.sin(z.ph) * 0.1; if (z.kind === 'nangram') { g.userData.armL.rotation.z = 0.6 + Math.sin(Z.t * 3) * 0.4; g.userData.armR.rotation.z = -0.6 - Math.sin(Z.t * 3) * 0.4; } }
+    if (z.flash > 0) z.flash -= dt;
+    z.hitT -= dt; if (bd < 1.2 && z.hitT <= 0) { z.hitT = 1; if (best.f) { best.f.hp -= k.dmg; hitFlash(4); if (best.f.hp <= 0) return zLose(`${best.f.name}ถูก${k.name}ฆ่าตาย…`); } else hurt(k.dmg, `พ่อถูก${k.name}รุมกัด`); } }
+  for (const f of Z.fam) f.hp = Math.min(f.max, f.hp + dt); // slow natural regen
+  // coins: no magnet - walk onto them
+  for (let i = Z.coins.length - 1; i >= 0; i--) { const c = Z.coins[i]; c.life -= dt; c.coin.rotation.z += dt * 3; c.coin.position.y = 0.45 + Math.sin(Z.t * 3 + i) * 0.08; if (c.life < 8) c.m.visible = Math.sin(c.life * 12) > 0; // blink before vanishing
+    const d = Math.hypot(P.x - c.m.position.x, P.z - c.m.position.z); if (d < 1.0) { zMoneyPop(c.v); Z.money += c.v; noiseHit(0.05, { f: 3000, q: 4, vol: 0.06 }); scene.remove(c.m); Z.coins.splice(i, 1); } else if (c.life <= 0) { scene.remove(c.m); Z.coins.splice(i, 1); } }
+  // rockets + grenades
+  for (const r of (Z.rockets || [])) { r.life -= dt; r.m.position.addScaledVector(r.dir, 40 * dt); burst(r.m.position.clone(), 0x9a9a9a, 1);
+    const hitZ = Z.list.some(z => !z.dead && z.g.position.distanceTo(r.m.position) < 1.5 + z.g.scale.y); if (hitZ || r.life <= 0 || r.m.position.y < 0.1) { r.done = 1; scene.remove(r.m); zBlast(r.m.position.clone(), 6, 400); } }
+  Z.rockets = (Z.rockets || []).filter(r => !r.done);
+  for (const n of (Z.grenades || [])) { n.t -= dt; n.v.y -= 15 * dt; n.m.position.addScaledVector(n.v, dt); if (n.m.position.y < 0.1) { n.m.position.y = 0.1; n.v.y *= -0.3; n.v.x *= 0.6; n.v.z *= 0.6; } if (n.t <= 0) { n.done = 1; scene.remove(n.m); zBlast(n.m.position.clone(), 5, 220); } }
+  Z.grenades = (Z.grenades || []).filter(n => !n.done);
+  // escape: father and whole family inside the green beam
+  if ([P].concat(Z.fam.map(f => f.g.position)).every(p => Math.hypot(p.x - Z.exit.x, p.z - Z.exit.z) < 4)) zWin();
+  Z.hudT = (Z.hudT || 0) - dt; if (Z.hudT <= 0) { Z.hudT = 0.15; zHud(); }
+}
+function zEnd() { Z.on = false; zhud.style.display = 'none'; zMoneyEl.style.display = 'none'; document.getElementById('bar').style.display = ''; hands.visible = true; if (Z.beacon) Z.beacon.visible = false; if (Z.lamp) Z.lamp.visible = false; }
+function zLose(why) { if (game.busy) return; game.busy = true; showMsg('ครอบครัวไม่รอด…', why, 'เริ่มใหม่', 'bad', () => { game.busy = false; zStart(); }); }
+function zWin() { if (game.busy) return; game.busy = true; showMsg('หนีรอดแล้ว!', `พาครอบครัวออกจากหมู่บ้านได้สำเร็จ · ฆ่าซอมบี้ ${Z.kills} ตัว · ใช้เวลา ${Math.floor(Z.t / 60)} นาที ${Math.floor(Z.t % 60)} วินาที`, 'เล่นอีกครั้ง', 'good', () => { game.busy = false; zStart(); }); }
+$('btnZombie').onclick = () => { ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); zStart(); engage(); };
+
 setItem(1); applyQuality(); applyTouchMode();
 window.__g = { audioState: () => AC && AC.state, tone, sting, scream, step, cfg, tin, applyTouchMode, layoutTouch, drawScare, addAnom, villagers, game, player, env, ANOMS, ROUTES, routeAt, startRound, answer, scene, lots, engage };
 frame();

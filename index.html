@@ -63,7 +63,7 @@ button:hover{filter:brightness(1.1)}button:focus-visible{outline:2px solid #4de1
 .tb{position:absolute;transform:translate(-50%,-50%);margin:0;padding:0;border-radius:50%;background:rgba(14,18,16,.55);border:2px solid rgba(241,236,217,.6);color:var(--ink);font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;touch-action:none;line-height:1.05;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .tb svg{width:44%;height:44%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .tb.on,.tb.down{background:rgba(241,236,217,.9);color:#14160f}
-.tb[data-b=time]{display:none}body.free .tb[data-b=time],#touch.edit .tb[data-b=time]{display:flex}
+.tb.zb{display:none}body.zmode .tb.zb,#touch.edit .tb.zb{display:flex}.tb[data-b=atk]{background:rgba(120,20,16,.6);border-color:#ff8a6a}.tb[data-b=shop]{background:rgba(90,70,10,.65);border-color:#ffd040}body.zmode .tb[data-b=light]{display:none}.tb[data-b=time]{display:none}body.free .tb[data-b=time],#touch.edit .tb[data-b=time]{display:flex}
 #joy{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(241,236,217,.5);background:rgba(14,18,16,.28);pointer-events:none}
 #joy.act{background:rgba(14,18,16,.42)}
 #knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(241,236,217,.7);box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -119,6 +119,11 @@ input[type=range]{width:min(220px,48vw);accent-color:#f1ecd9;height:28px}
   <button class="tb" data-b="jump" aria-label="กระโดด"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>กระโดด</button>
   <button class="tb" data-b="light" aria-label="ไฟฉาย"><svg viewBox="0 0 24 24"><path d="M9 3h6v5l-2 3v9h-2v-9L9 8z"/><path d="M4 4l2 2M20 4l-2 2"/></svg>ไฟฉาย</button>
   <button class="tb" data-b="time" aria-label="กลางวัน-กลางคืน"><svg viewBox="0 0 24 24"><circle cx="9" cy="10" r="4"/><path d="M15 15a5 5 0 1 0 5-6 4 4 0 0 1-5 6z"/></svg>☀/☾</button>
+  <button class="tb zb" data-b="atk" aria-label="โจมตี"><svg viewBox="0 0 24 24"><path d="M4 20L16 8M14 4l6 6M12 6l6 6"/></svg>ตี / ยิง</button>
+  <button class="tb zb" data-b="swap" aria-label="สลับอาวุธ"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>สลับ</button>
+  <button class="tb zb" data-b="rel" aria-label="รีโหลด"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-3-6.3M20 4v5h-5"/></svg>รีโหลด</button>
+  <button class="tb zb" data-b="nade" aria-label="ระเบิด"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M10 8V5h4v3M14 5l3-2"/></svg>ระเบิด</button>
+  <button class="tb zb" data-b="shop" aria-label="ร้านค้า"><svg viewBox="0 0 24 24"><path d="M3 4h3l2 11h11l2-8H7"/><circle cx="9" cy="19" r="1.5"/><circle cx="18" cy="19" r="1.5"/></svg>ร้าน</button>
   <button class="tb" data-b="pause" aria-label="หยุดเกม"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button>
 </div>
 <div id="editbar"><span>ลากปุ่มไปวางตรงที่ถนัด</span><button id="editReset" class="ghost">คืนค่าเดิม</button><button id="editDone">เสร็จ</button></div>
@@ -5450,7 +5455,7 @@ function updateGrade(t) {
 }
 
 // ---------- settings / touch controls ----------
-const DEF_POS = { joy: [0.15, 0.7], run: [0.8, 0.6], jump: [0.92, 0.76], light: [0.7, 0.86], time: [0.57, 0.88], pause: [0.5, 0.075] };
+const DEF_POS = { joy: [0.15, 0.7], run: [0.8, 0.6], jump: [0.92, 0.76], light: [0.7, 0.86], time: [0.57, 0.88], pause: [0.5, 0.075], atk: [0.89, 0.42], swap: [0.68, 0.62], rel: [0.76, 0.27], nade: [0.68, 0.84], shop: [0.93, 0.2] };
 const CFG_KEY = 'nonsawan_cfg_v1';
 const cfg = Object.assign({ vol: 0.8, amb: 0.7, size: 1, opacity: 0.75, sens: 1, runMode: 'hold', pushRun: true, swap: false, quality: 'auto', touch: 'auto', pos: {} }, (() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch (e) { return {}; } })());
 function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) { } }
@@ -5460,11 +5465,12 @@ const tl = $('touch'), tzone = $('tzone'), joy = $('joy'), knob = $('knob'), tbt
 const tin = { mx: 0, mz: 0, mag: 0, runHold: false, runToggle: false, jump: false };
 let joyId = null, lookId = null, joyC = [0, 0], lookLast = [0, 0], drag = null;
 const inJoyHalf = x => cfg.swap ? x > innerWidth * 0.5 : x < innerWidth * 0.5;
-function posOf(id) { const p = cfg.pos[id] || DEF_POS[id]; return [(cfg.swap ? 1 - p[0] : p[0]) * innerWidth, p[1] * innerHeight]; }
+const ZPOS = { joy: [0.14, 0.72], atk: [0.88, 0.72], jump: [0.73, 0.88], run: [0.74, 0.6], rel: [0.96, 0.5], nade: [0.61, 0.66], swap: [0.6, 0.88], shop: [0.62, 0.08] };
+function posOf(id) { const p = cfg.pos[id] || (document.body.classList.contains('zmode') && ZPOS[id]) || DEF_POS[id]; return [(cfg.swap ? 1 - p[0] : p[0]) * innerWidth, p[1] * innerHeight]; }
 function setKnob(dx, dy) { knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }
 function layoutTouch() {
   const s = cfg.size * clamp(Math.min(innerWidth, innerHeight) / 390, 1, 1.4), Bz = Math.round(64 * s), J = Math.round(132 * s); uiScale = s;
-  for (const id in tbtn) { const [x, y] = posOf(id), b = tbtn[id], z = id === 'pause' ? Math.round(Bz * 0.68) : Bz; b.style.left = x + 'px'; b.style.top = y + 'px'; b.style.width = b.style.height = z + 'px'; b.style.fontSize = Math.round(10.5 * s) + 'px'; b.style.opacity = cfg.opacity; }
+  for (const id in tbtn) { const [x, y] = posOf(id), b = tbtn[id], z = id === 'pause' ? Math.round(Bz * 0.68) : id === 'atk' ? Math.round(Bz * 1.45) : Bz; b.style.left = x + 'px'; b.style.top = y + 'px'; b.style.width = b.style.height = z + 'px'; b.style.fontSize = Math.round(10.5 * s) + 'px'; b.style.opacity = cfg.opacity; }
   joy.style.width = joy.style.height = J + 'px'; knob.style.width = knob.style.height = Math.round(J * 0.42) + 'px'; joy.style.opacity = cfg.opacity;
   if (joyId === null) { const [x, y] = posOf('joy'); joy.style.left = x + 'px'; joy.style.top = y + 'px'; }
 }
@@ -5506,11 +5512,13 @@ tzone.addEventListener('pointerup', endPtr); tzone.addEventListener('pointercanc
 // buttons
 function press(id, down) {
   if (editing) return; if (!game.playing && id !== 'pause') return;
+  if (id === 'atk') { Z.fire = down; tbtn.atk.classList.toggle('down', down); return; } // hold to keep firing
   if (id === 'run') { if (cfg.runMode === 'hold') tin.runHold = down; else if (down) tin.runToggle = !tin.runToggle; tbtn.run.classList.toggle('on', tin.runHold || tin.runToggle); return; }
   tbtn[id].classList.toggle('down', down); if (!down) return;
   if (id === 'jump') tin.jump = true;
   if (id === 'light') { if (player.item !== 2) setItem(2); useItem(); }
   if (id === 'pause') pauseGame();
+  if (id === 'swap' && Z.on) { Z.wi = (Z.wi + 1) % Z.owned.length; zWpnMesh(); } if (id === 'rel' && Z.on) zReload(); if (id === 'nade' && Z.on) zNade(); if (id === 'shop' && Z.on) zShopOpen();
   if (id === 'time' && game.mode === 'free') env.time = (env.time > 6 && env.time < 18) ? 21 : 10;
 }
 function startDrag(e, id, el) { e.preventDefault(); e.stopPropagation(); drag = { id, el, pid: e.pointerId }; try { el.setPointerCapture(e.pointerId); } catch (_) { } }
@@ -5706,11 +5714,12 @@ const zMoneyEl = document.createElement('div'); zMoneyEl.style.cssText = 'positi
 zMoneyEl.innerHTML = '<div style="font-size:13px;color:#e8d8a0;letter-spacing:.05em">เงินที่มี</div><div id="zmVal" style="font-size:46px;font-weight:900;color:#ffd040;text-shadow:0 0 14px rgba(255,190,40,.7),0 2px 0 #6a4a00,0 0 3px #000;line-height:1.05">฿0</div><div id="zmPop" style="font-size:22px;font-weight:800;color:#80ff90;text-shadow:0 0 6px #000;height:26px;opacity:0;transition:opacity .25s,transform .25s"></div><div id="zmHint" style="margin-top:6px;display:inline-block;background:rgba(10,10,12,.8);border:1px solid #c8a040;border-radius:8px;padding:6px 10px;font-size:14px;color:#f1ecd9"></div>';
 document.body.appendChild(zMoneyEl);
 function zMoneyPop(v) { const p = document.getElementById('zmPop'); p.textContent = '+฿' + v; p.style.opacity = 1; p.style.transform = 'translateY(-6px)'; clearTimeout(zMoneyPop.h); zMoneyPop.h = setTimeout(() => { p.style.opacity = 0; p.style.transform = ''; }, 900); }
+function zKeyB() { return touchMode ? 'แตะปุ่ม <b>ร้าน</b>' : 'กด <kbd>B</kbd>'; }
 function zMoneyHud() { document.getElementById('zmVal').textContent = '฿' + Z.money; const next = ZW.filter(w => !Z.owned.includes(w.id)).sort((a, b) => a.price - b.price)[0], can = next && Z.money >= next.price, h = document.getElementById('zmHint');
-  h.innerHTML = can ? '<b style="color:#80ff90">ซื้ออาวุธใหม่ได้แล้ว!</b><br>กด <kbd>B</kbd> เปิดร้าน → คลิกอาวุธที่ต้องการ' : next ? 'เก็บเหรียญทองที่ซอมบี้ดรอป<br>ครบ ฿' + next.price + ' ซื้อ <b>' + next.name + '</b> ได้ · กด <kbd>B</kbd> เปิดร้าน' : 'ซื้ออาวุธครบแล้ว! กด <kbd>B</kbd> ซื้อระเบิด/ยา';
+  h.innerHTML = can ? '<b style="color:#80ff90">ซื้ออาวุธใหม่ได้แล้ว!</b><br>' + zKeyB() + ' เปิดร้าน → คลิกอาวุธที่ต้องการ' : next ? 'เก็บเหรียญทองที่ซอมบี้ดรอป<br>ครบ ฿' + next.price + ' ซื้อ <b>' + next.name + '</b> ได้ · ' + zKeyB() + ' เปิดร้าน' : 'ซื้ออาวุธครบแล้ว! ' + zKeyB() + ' ซื้อระเบิด/ยา';
   h.style.borderColor = can ? '#80ff90' : '#c8a040'; h.style.boxShadow = can && Math.sin(Z.t * 6) > 0 ? '0 0 14px #80ff90' : 'none'; }
 function zHud() { zMoneyHud(); const w = zw(), am = w.mag ? (Z.reloadT > 0 ? 'รีโหลด…' : `${Z.ammo[w.id]}/${w.mag}`) : '—', d = Math.hypot(Z.exit.x - player.pos.x, Z.exit.z - player.pos.z) | 0;
-  zhud.innerHTML = `ฆ่าแล้ว ${Z.kills} ตัว<br>อาวุธ: <b>${w.name}</b> ${am} · ระเบิด ${Z.nades}<br>พ่อ ${Math.ceil(player.hp)} · ${Z.fam.map(f => `${f.name} ${Math.max(0, Math.ceil(f.hp))}`).join(' · ')}<br>ทางออกหมู่บ้าน: <b>${d} ม.</b> (ลำแสงเขียว)<br><small style="color:#b8b2a0">คลิกโจมตี · 1-9/Q เปลี่ยนอาวุธ · R รีโหลด · G ระเบิด · B ร้านค้า</small>`; }
+  zhud.innerHTML = `ฆ่าแล้ว ${Z.kills} ตัว<br>อาวุธ: <b>${w.name}</b> ${am} · ระเบิด ${Z.nades}<br>พ่อ ${Math.ceil(player.hp)} · ${Z.fam.map(f => `${f.name} ${Math.max(0, Math.ceil(f.hp))}`).join(' · ')}<br>ทางออกหมู่บ้าน: <b>${d} ม.</b> (ลำแสงเขียว)${touchMode ? '' : '<br><small style="color:#b8b2a0">คลิกโจมตี · 1-9/Q เปลี่ยนอาวุธ · R รีโหลด · G ระเบิด · B ร้านค้า</small>'}`; }
 // ---------- start ----------
 function zStart() {
   startFree(); clearAnom(); game.mode = 'zombie'; Z.on = true;
@@ -5722,7 +5731,7 @@ function zStart() {
   if (!Z.beacon) { Z.beacon = new T.Mesh(new T.CylinderGeometry(1.6, 1.6, 60, 16, 1, true), new T.MeshBasicMaterial({ color: 0x40ff80, transparent: true, opacity: 0.25, side: T.DoubleSide, depthWrite: false })); Z.beacon.userData.fx = 1; scene.add(Z.beacon); }
   Z.beacon.position.set(Z.exit.x, 30, Z.exit.z); Z.beacon.visible = true;
   if (!Z.lamp) { Z.lamp = new T.PointLight(0xffc880, 14, 16, 1.6); scene.add(Z.lamp); } Z.lamp.visible = true;
-  zMakeFamily(); document.getElementById('bar').style.display = 'none'; zhud.style.display = 'block'; zMoneyEl.style.display = 'block'; hands.visible = false;
+  zMakeFamily(); document.getElementById('bar').style.display = 'none'; zhud.style.display = 'block'; zMoneyEl.style.display = 'block'; document.body.classList.add('zmode'); zMoneyEl.style.top = touchMode ? '4px' : '240px'; zMoneyEl.style.right = touchMode ? '140px' : '16px'; document.getElementById('zmVal').style.fontSize = touchMode ? '28px' : '46px'; document.getElementById('zmHint').style.cssText += touchMode ? ';font-size:11px;max-width:230px;padding:4px 8px' : ''; zhud.style.fontSize = touchMode ? '11px' : '14px'; zhud.style.top = touchMode ? '78px' : '120px'; zhud.style.padding = touchMode ? '6px 10px' : '10px 14px'; if (touchMode) layoutTouch(); hands.visible = false;
   ui.obj.innerHTML = '<b>หนีออกจากหมู่บ้าน!</b><br>พาแม่ เบบี๋ และลูกชายไปที่ลำแสงสีเขียวทางเข้าหมู่บ้าน · ทุกคนต้องรอด'; ui.score.textContent = '';
 }
 // ---------- combat ----------
@@ -5854,7 +5863,7 @@ function zUpdate(dt) { if (!Z.on) return; const P = player.pos;
   if ([P].concat(Z.fam.map(f => f.g.position)).every(p => Math.hypot(p.x - Z.exit.x, p.z - Z.exit.z) < 4)) zWin();
   Z.hudT = (Z.hudT || 0) - dt; if (Z.hudT <= 0) { Z.hudT = 0.15; zHud(); }
 }
-function zEnd() { Z.on = false; zhud.style.display = 'none'; zMoneyEl.style.display = 'none'; document.getElementById('bar').style.display = ''; hands.visible = true; if (Z.beacon) Z.beacon.visible = false; if (Z.lamp) Z.lamp.visible = false; }
+function zEnd() { Z.on = false; zhud.style.display = 'none'; zMoneyEl.style.display = 'none'; document.body.classList.remove('zmode'); if (touchMode) layoutTouch(); document.getElementById('bar').style.display = ''; hands.visible = true; if (Z.beacon) Z.beacon.visible = false; if (Z.lamp) Z.lamp.visible = false; }
 function zLose(why) { if (game.busy) return; game.busy = true; showMsg('ครอบครัวไม่รอด…', why, 'เริ่มใหม่', 'bad', () => { game.busy = false; zStart(); }); }
 function zWin() { if (game.busy) return; game.busy = true; showMsg('หนีรอดแล้ว!', `พาครอบครัวออกจากหมู่บ้านได้สำเร็จ · ฆ่าซอมบี้ ${Z.kills} ตัว · ใช้เวลา ${Math.floor(Z.t / 60)} นาที ${Math.floor(Z.t % 60)} วินาที`, 'เล่นอีกครั้ง', 'good', () => { game.busy = false; zStart(); }); }
 $('btnZombie').onclick = () => { ui.menu.style.display = 'none'; ui.hud.style.display = 'block'; updTouchVis(); zStart(); engage(); };
